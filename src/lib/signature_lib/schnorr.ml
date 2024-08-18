@@ -11,7 +11,7 @@ module type Message_intf = sig
   type curve_scalar
 
   val derive :
-       ?signature_kind:Mina_signature_kind.t
+       ?signature_kind:Mina_compile_config.signature_kind
     -> t
     -> private_key:curve_scalar
     -> public_key:curve
@@ -24,7 +24,7 @@ module type Message_intf = sig
     t -> private_key:curve_scalar -> public_key:curve -> curve_scalar
 
   val hash :
-       ?signature_kind:Mina_signature_kind.t
+       ?signature_kind:Mina_compile_config.signature_kind
     -> t
     -> public_key:curve
     -> r:field
@@ -121,13 +121,13 @@ module type S = sig
   val compress : curve -> bool list
 
   val sign :
-       ?signature_kind:Mina_signature_kind.t
+       ?signature_kind:Mina_compile_config.signature_kind
     -> Private_key.t
     -> Message.t
     -> Signature.t
 
   val verify :
-       ?signature_kind:Mina_signature_kind.t
+       ?signature_kind:Mina_compile_config.signature_kind
     -> Signature.t
     -> Public_key.t
     -> Message.t
@@ -308,7 +308,7 @@ module Message = struct
   let network_id_other chain_name = chain_name
 
   let network_id =
-    match Mina_signature_kind.t with
+    match Mina_compile_config.signature_kind with
     | Mainnet ->
         network_id_mainnet
     | Testnet ->
@@ -338,7 +338,7 @@ module Message = struct
       |> Fn.flip List.take (Int.min 256 (Tock.Field.size_in_bits - 1))
       |> Tock.Field.project
 
-    let derive ?(signature_kind = Mina_signature_kind.t) =
+    let derive ?(signature_kind = Mina_compile_config.signature_kind) =
       make_derive
         ~network_id:
           ( match signature_kind with
@@ -412,7 +412,7 @@ module Message = struct
       |> Fn.flip List.take (Int.min 256 (Tock.Field.size_in_bits - 1))
       |> Tock.Field.project
 
-    let derive ?(signature_kind = Mina_signature_kind.t) =
+    let derive ?(signature_kind = Mina_compile_config.signature_kind) =
       make_derive
         ~network_id:
           ( match signature_kind with

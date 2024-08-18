@@ -10,9 +10,9 @@
    ;; local libraries
    snark_params
    random_oracle
-   mina_signature_kind
    hash_prefixes
    hash_prefix_create
+   mina_compile_config
    pickles
    )
  (preprocess

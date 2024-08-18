@@ -46,3 +46,16 @@ let zkapp_cmd_limit = Node_config.zkapp_cmd_limit
 let zkapp_cmd_limit_hardcap = Node_config.zkapp_cmd_limit_hardcap
 
 let zkapps_disabled = Node_config.zkapps_disabled
+
+type signature_kind =
+  | Testnet
+  | Mainnet
+  | Other_network of string
+
+let signature_kind = match Node_config.network with
+  | "testnet" ->
+      Testnet
+  | "mainnet" ->
+      Mainnet
+  | network ->
+      Other_network network

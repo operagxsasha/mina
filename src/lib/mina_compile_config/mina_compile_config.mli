@@ -39,3 +39,10 @@ val max_action_elements : int
 val zkapp_cmd_limit_hardcap : int
 
 val zkapps_disabled : bool
+
+type signature_kind =
+  | Testnet
+  | Mainnet
+  | Other_network of string
+
+val signature_kind : signature_kind

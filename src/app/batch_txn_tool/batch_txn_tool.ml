@@ -201,7 +201,7 @@ let there_and_back_again ~num_txn_per_acct ~txns_per_block ~slot_time ~fill_rate
         Currency.Amount.to_fee
           (Option.value_exn
              (Currency.Amount.scale
-                (Currency.Amount.of_fee Mina_base.Signed_command.minimum_fee)
+                (Currency.Amount.of_fee Genesis_constants_compiled.t.minimum_user_command_fee)
                 10 ) )
     | Some f ->
         Currency.Amount.to_fee (Currency.Amount.of_mina_string_exn f)

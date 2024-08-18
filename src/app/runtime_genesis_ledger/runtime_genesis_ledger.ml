@@ -13,9 +13,7 @@ module Hash_json = struct
   type t = { ledger : Hashes.t; epoch_data : epoch_data } [@@deriving to_yojson]
 end
 
-let ledger_depth =
-  (Lazy.force Precomputed_values.compiled_inputs).constraint_constants
-    .ledger_depth
+let ledger_depth = Genesis_constants_compiled.Constraint_constants.t.ledger_depth
 
 let logger = Logger.create ()
 

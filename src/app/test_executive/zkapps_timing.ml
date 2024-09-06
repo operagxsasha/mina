@@ -559,6 +559,8 @@ module Make (Inputs : Intf.Test.Inputs_intf) = struct
               { network = Zkapp_precondition.Protocol_state.accept
               ; account =
                   Zkapp_precondition.Account.nonce (Account.Nonce.succ nonce)
+              ; test =
+                  Zkapp_precondition.Account.nonce (Account.Nonce.succ nonce)
               ; valid_while =
                   Check
                     Zkapp_precondition.Closed_interval.

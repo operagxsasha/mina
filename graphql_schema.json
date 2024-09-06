@@ -2744,6 +2744,22 @@
               "deprecationReason": null
             },
             {
+              "name": "test",
+              "description": null,
+              "args": [],
+              "type": {
+                "kind": "NON_NULL",
+                "name": null,
+                "ofType": {
+                  "kind": "INPUT_OBJECT",
+                  "name": "AccountPreconditionInput",
+                  "ofType": null
+                }
+              },
+              "isDeprecated": false,
+              "deprecationReason": null
+            },
+            {
               "name": "validWhile",
               "description": null,
               "args": [],
@@ -2773,6 +2789,20 @@
             },
             {
               "name": "account",
+              "description": null,
+              "type": {
+                "kind": "NON_NULL",
+                "name": null,
+                "ofType": {
+                  "kind": "INPUT_OBJECT",
+                  "name": "AccountPreconditionInput",
+                  "ofType": null
+                }
+              },
+              "defaultValue": null
+            },
+            {
+              "name": "test",
               "description": null,
               "type": {
                 "kind": "NON_NULL",
@@ -7826,6 +7856,22 @@
             },
             {
               "name": "account",
+              "description": null,
+              "args": [],
+              "type": {
+                "kind": "NON_NULL",
+                "name": null,
+                "ofType": {
+                  "kind": "OBJECT",
+                  "name": "AccountPrecondition",
+                  "ofType": null
+                }
+              },
+              "isDeprecated": false,
+              "deprecationReason": null
+            },
+            {
+              "name": "test",
               "description": null,
               "args": [],
               "type": {

@@ -642,6 +642,7 @@ module Account_update_body_components = struct
     ; preconditions =
         { Account_update.Preconditions.network = t.protocol_state_precondition
         ; account = t.account_precondition
+        ; test = t.account_precondition
         ; valid_while = t.valid_while_precondition
         }
     ; use_full_commitment = t.use_full_commitment

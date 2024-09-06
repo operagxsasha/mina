@@ -75,3 +75,10 @@ module Account = struct
       }
   end
 end
+
+module Permisions = struct
+  module V1 = struct
+    (* TODO how should I version this? *)
+    type t = { editState : bool }
+  end
+end

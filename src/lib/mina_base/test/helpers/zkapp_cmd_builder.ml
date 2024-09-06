@@ -41,6 +41,7 @@ let update_body ?preconditions ?(update = Account_update.Update.noop) ~account
     Account_update.Preconditions.
       { network = Zkapp_precondition.Protocol_state.accept
       ; account = Zkapp_precondition.Account.nonce nonce
+      ; test = Zkapp_precondition.Account.nonce nonce
       ; valid_while = Ignore
       }
   in

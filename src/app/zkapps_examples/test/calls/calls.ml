@@ -133,6 +133,7 @@ let%test_module "Composability test" =
             { Account_update.Preconditions.network =
                 Zkapp_precondition.Protocol_state.accept
             ; account = Zkapp_precondition.Account.accept
+            ; test = Zkapp_precondition.Account.accept
             ; valid_while = Ignore
             }
         ; authorization_kind = Signature

@@ -3,6 +3,10 @@ open Async_kernel
 
 let time_offset_sec = 1609459200.
 
+module type CONTEXT = sig
+  val block_window_duration : Time.Span.t
+end
+
 module Counter = struct
   type t = unit
 
@@ -111,7 +115,7 @@ module Transaction_pool = struct
   let zkapp_proof_updates : Counter.t = ()
 end
 
-module Network = struct
+module Network(_ : CONTEXT) = struct
   let peers : Gauge.t = ()
 
   let all_peers : Gauge.t = ()
@@ -487,7 +491,7 @@ module Transition_frontier_controller = struct
   let breadcrumbs_built_by_builder : Counter.t = ()
 end
 
-module Block_latency = struct
+module Block_latency(_ : CONTEXT) = struct
   module Upload_to_gcloud = struct
     let upload_to_gcloud_blocks : Gauge.t = ()
   end

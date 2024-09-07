@@ -11,8 +11,6 @@ open Async_kernel
 
 let time_offset_sec = 1609459200.
 
-let block_window_duration = Node_config.block_window_duration
-
 (* textformat serialization and runtime metrics taken from github.com/mirage/prometheus:/app/prometheus_app.ml *)
 module TextFormat_0_0_4 = struct
   let re_unquoted_escapes = Re.compile @@ Re.set "\\\n"
@@ -409,7 +407,11 @@ struct
       metric
 end
 
-module Network = struct
+module type CONTEXT = sig
+  val block_window_duration : Time.Span.t
+end
+
+module Network (Context : CONTEXT) = struct
   let subsystem = "Network"
 
   let peers : Gauge.t =
@@ -433,11 +435,9 @@ module Network = struct
     Counter.v "messages_received" ~help ~namespace ~subsystem
 
   module Delay_time_spec = struct
-    let tick_interval =
-      Core.Time.Span.of_ms (Int.to_float block_window_duration)
+    let tick_interval = Context.block_window_duration
 
-    let rolling_interval =
-      Core.Time.Span.of_ms (Int.to_float (block_window_duration * 20))
+    let rolling_interval = Time.Span.scale Context.block_window_duration 20.0
   end
 
   module Block = struct
@@ -1433,7 +1433,7 @@ module Transition_frontier_controller = struct
 end
 
 (* these block latency metrics are recomputed every half a slot, and the averages span 20 slots *)
-module Block_latency = struct
+module Block_latency (Context : CONTEXT) = struct
   let subsystem = "Block_latency"
 
   module Upload_to_gcloud = struct
@@ -1443,18 +1443,15 @@ module Block_latency = struct
   end
 
   module Latency_time_spec = struct
-    let tick_interval =
-      Core.Time.Span.of_ms (Int.to_float (block_window_duration / 2))
+    let tick_interval = Time.Span.scale Context.block_window_duration 0.5
 
-    let rolling_interval =
-      Core.Time.Span.of_ms (Int.to_float (block_window_duration * 20))
+    let rolling_interval = Time.Span.scale Context.block_window_duration 20.0
   end
 
   module Gossip_slots =
     Moving_bucketed_average
       (struct
-        let bucket_interval =
-          Core.Time.Span.of_ms (Int.to_float (block_window_duration / 2))
+        let bucket_interval = Time.Span.scale Context.block_window_duration 0.5
 
         let num_buckets = 40
 

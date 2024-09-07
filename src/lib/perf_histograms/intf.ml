@@ -1,4 +1,9 @@
 open Async
+open Core_kernel
+
+module type CONTEXT = sig
+  val block_window_duration : Time.Span.t
+end
 
 type ('q, 'r) dispatch =
   Versioned_rpc.Connection_with_menu.t -> 'q -> 'r Deferred.Or_error.t

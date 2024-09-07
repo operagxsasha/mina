@@ -3,6 +3,10 @@ open Async_kernel
 
 val time_offset_sec : float
 
+module type CONTEXT = sig
+  val block_window_duration : Time.Span.t
+end
+
 module Counter : sig
   type t
 
@@ -101,7 +105,7 @@ module Transaction_pool : sig
   val zkapp_proof_updates : Counter.t
 end
 
-module Network : sig
+module Network (Context : CONTEXT) : sig
   val peers : Gauge.t
 
   val all_peers : Gauge.t
@@ -475,7 +479,7 @@ module Transition_frontier_controller : sig
   val breadcrumbs_built_by_builder : Counter.t
 end
 
-module Block_latency : sig
+module Block_latency(Context : CONTEXT) : sig
   module Upload_to_gcloud : sig
     val upload_to_gcloud_blocks : Gauge.t
   end

@@ -171,13 +171,17 @@ module Make
 
   let update_metrics ~logger ~log_gossip_heard
       (Envelope.Incoming.{ data = diff; sender; _ } : t Envelope.Incoming.t)
-      valid_cb =
-    Mina_metrics.(Counter.inc_one Network.gossip_messages_received) ;
-    Mina_metrics.(Gauge.inc_one Network.snark_pool_diff_received) ;
+      valid_cb ~block_window_duration =
+    let module Network_metrics = Mina_metrics.Network(struct
+      let block_window_duration = block_window_duration
+    end
+    ) in
+    Mina_metrics.(Counter.inc_one Network_metrics.gossip_messages_received) ;
+    Mina_metrics.(Gauge.inc_one Network_metrics.snark_pool_diff_received) ;
     if log_gossip_heard then
       Option.iter (to_compact diff) ~f:(fun work ->
           [%str_log debug] (Snark_work_received { work; sender }) ) ;
-    Mina_metrics.(Counter.inc_one Network.Snark_work.received) ;
+    Mina_metrics.(Counter.inc_one Network_metrics.Snark_work.received) ;
     Mina_net2.Validation_callback.set_message_type valid_cb `Snark_work
 
   let log_internal ?reason ~logger msg = function

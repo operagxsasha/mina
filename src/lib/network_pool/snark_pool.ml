@@ -568,6 +568,9 @@ let%test_module "random set test" =
 
     let trust_system = Mocks.trust_system
 
+    let block_window_duration =
+      Mina_compile_config.For_unit_tests.t.block_window_duration
+
     let precomputed_values = Lazy.force Precomputed_values.for_unit_tests
 
     (* SNARK work is rejected if the prover doesn't have an account and the fee
@@ -639,6 +642,7 @@ let%test_module "random set test" =
           ~consensus_constants ~time_controller
           ~frontier_broadcast_pipe:frontier_broadcast_pipe_r
           ~log_gossip_heard:false ~on_remote_push:(Fn.const Deferred.unit)
+          ~block_window_duration
         (* |>  *)
       in
       let pool = Mock_snark_pool.resource_pool mock_pool in
@@ -805,6 +809,7 @@ let%test_module "random set test" =
               ~consensus_constants ~time_controller ~logger
               ~frontier_broadcast_pipe:frontier_broadcast_pipe_r
               ~log_gossip_heard:false ~on_remote_push:(Fn.const Deferred.unit)
+              ~block_window_duration
           in
           let priced_proof =
             { Priced_proof.proof =
@@ -877,6 +882,7 @@ let%test_module "random set test" =
                 ~consensus_constants ~time_controller
                 ~frontier_broadcast_pipe:frontier_broadcast_pipe_r
                 ~log_gossip_heard:false ~on_remote_push:(Fn.const Deferred.unit)
+                ~block_window_duration
             in
             List.map (List.take works per_reader) ~f:create_work
             |> List.map ~f:(fun work ->
@@ -961,6 +967,7 @@ let%test_module "random set test" =
               ~constraint_constants ~consensus_constants ~time_controller
               ~frontier_broadcast_pipe:frontier_broadcast_pipe_r
               ~log_gossip_heard:false ~on_remote_push:(Fn.const Deferred.unit)
+              ~block_window_duration
           in
           let resource_pool = Mock_snark_pool.resource_pool network_pool in
           let%bind () =

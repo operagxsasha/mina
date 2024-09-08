@@ -125,6 +125,7 @@ module type Resource_pool_diff_intf = sig
     -> log_gossip_heard:bool
     -> t Envelope.Incoming.t
     -> Mina_net2.Validation_callback.t
+    -> block_window_duration:Time.Span.t
     -> unit
 
   val log_internal :
@@ -224,6 +225,7 @@ module type Network_pool_base_intf = sig
     -> logger:Logger.t
     -> log_gossip_heard:bool
     -> on_remote_push:(unit -> unit Deferred.t)
+    -> block_window_duration:Time.Span.t
     -> t * Remote_sink.t * Local_sink.t
 
   val of_resource_pool_and_diffs :
@@ -233,6 +235,7 @@ module type Network_pool_base_intf = sig
     -> tf_diffs:transition_frontier_diff Strict_pipe.Reader.t
     -> log_gossip_heard:bool
     -> on_remote_push:(unit -> unit Deferred.t)
+    -> block_window_duration:Time.Span.t
     -> t * Remote_sink.t * Local_sink.t
 
   val resource_pool : t -> resource_pool

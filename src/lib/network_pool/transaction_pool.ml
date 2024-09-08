@@ -1480,9 +1480,12 @@ struct
                 "Received transaction-pool $fee_payer_summaries from $sender"
             }]
 
-      let update_metrics ~logger ~log_gossip_heard envelope valid_cb =
-        Mina_metrics.(Counter.inc_one Network.gossip_messages_received) ;
-        Mina_metrics.(Gauge.inc_one Network.transaction_pool_diff_received) ;
+      let update_metrics ~logger ~log_gossip_heard envelope valid_cb ~block_window_duration =
+        let module Network_metrics = Mina_metrics.Network(struct
+          let block_window_duration = block_window_duration
+        end) in
+        Mina_metrics.(Counter.inc_one Network_metrics.gossip_messages_received) ;
+        Mina_metrics.(Gauge.inc_one Network_metrics.transaction_pool_diff_received) ;
         let diff = Envelope.Incoming.data envelope in
         if log_gossip_heard then (
           let fee_payer_summaries =
@@ -1494,7 +1497,7 @@ struct
                ; sender = Envelope.Incoming.sender envelope
                } ) ;
           Mina_net2.Validation_callback.set_message_type valid_cb `Transaction ;
-          Mina_metrics.(Counter.inc_one Network.Transaction.received) )
+          Mina_metrics.(Counter.inc_one Network_metrics.Transaction.received) )
 
       let log_internal ?reason ~logger msg
           { Envelope.Incoming.data = diff; sender; _ } =
@@ -1654,6 +1657,8 @@ let%test_module _ =
     let proof_level = precomputed_values.proof_level
 
     let genesis_constants = precomputed_values.genesis_constants
+
+    let block_window_duration = Mina_compile_config.For_unit_tests.t.block_window_duration
 
     let minimum_fee =
       Currency.Fee.to_nanomina_int genesis_constants.minimum_user_command_fee
@@ -1922,6 +1927,7 @@ let%test_module _ =
         Test.create ~config ~logger ~constraint_constants ~consensus_constants
           ~time_controller ~frontier_broadcast_pipe:frontier_pipe_r
           ~log_gossip_heard:false ~on_remote_push:(Fn.const Deferred.unit)
+          ~block_window_duration
       in
       let txn_pool = Test.resource_pool pool_ in
       let%map () = Async.Scheduler.yield_until_no_jobs_remain () in

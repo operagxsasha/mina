@@ -19,6 +19,7 @@ type block_sink_config =
   ; consensus_constants : Consensus.Constants.t
   ; genesis_constants : Genesis_constants.t
   ; constraint_constants : Genesis_constants.Constraint_constants.t
+  ; block_window_duration : Time.Span.t
   }
 
 type t =
@@ -32,6 +33,7 @@ type t =
       ; consensus_constants : Consensus.Constants.t
       ; genesis_constants : Genesis_constants.t
       ; constraint_constants : Genesis_constants.Constraint_constants.t
+      ; block_window_duration : Time.Span.t
       }
   | Void
 
@@ -53,11 +55,18 @@ let push sink (`Transition e, `Time_received tm, `Valid_cb cb) =
       ; consensus_constants
       ; genesis_constants
       ; constraint_constants
+      ; block_window_duration
       } ->
       O1trace.sync_thread "handle_block_gossip"
       @@ fun () ->
       let%bind () = on_push () in
-      Mina_metrics.(Counter.inc_one Network.gossip_messages_received) ;
+      let module Metrics_Context = struct
+        let block_window_duration = block_window_duration
+      end in
+      let module Network_metrics = Mina_metrics.Network(Metrics_Context) in
+      let module Block_latency_metrics = Mina_metrics.Block_latency(Metrics_Context) in
+      let module Perf_histograms = Perf_histograms.F(Metrics_Context) in
+      Mina_metrics.(Counter.inc_one Network_metrics.gossip_messages_received) ;
       let state = Envelope.Incoming.data e in
       let state_hash =
         Mina_block.(
@@ -85,14 +94,14 @@ let push sink (`Transition e, `Time_received tm, `Valid_cb cb) =
         Block_time.(now time_controller |> to_time_exn)
       in
       don't_wait_for
-        ( match%map Mina_net2.Validation_callback.await cb with
+        ( match%map Mina_net2.Validation_callback.await ~block_window_duration cb with
         | Some `Accept ->
             let processing_time_span =
               Time.diff
                 Block_time.(now time_controller |> to_time_exn)
                 processing_start_time
             in
-            Mina_metrics.Block_latency.(
+            Block_latency_metrics.(
               Validation_acceptance_time.update processing_time_span)
         | Some _ ->
             ()
@@ -106,7 +115,7 @@ let push sink (`Transition e, `Time_received tm, `Valid_cb cb) =
              header state |> Header.protocol_state
              |> Protocol_state.blockchain_state |> Blockchain_state.timestamp
              |> Block_time.to_time_exn) ) ;
-      Mina_metrics.(Gauge.inc_one Network.new_state_received) ;
+      Mina_metrics.(Gauge.inc_one Network_metrics.new_state_received) ;
       if log_gossip_heard then
         [%str_log info]
           ~metadata:[ ("external_transition", Mina_block.to_yojson state) ]
@@ -119,7 +128,7 @@ let push sink (`Transition e, `Time_received tm, `Valid_cb cb) =
              ; sender = Envelope.Incoming.sender e
              } ) ;
       Mina_net2.Validation_callback.set_message_type cb `Block ;
-      Mina_metrics.(Counter.inc_one Network.Block.received) ;
+      Mina_metrics.(Counter.inc_one Network_metrics.Block.received) ;
       let sender = Envelope.Incoming.sender e in
       let%bind () =
         match
@@ -182,9 +191,9 @@ let push sink (`Transition e, `Time_received tm, `Valid_cb cb) =
           (Consensus.Data.Consensus_time.of_time_exn
              ~constants:consensus_constants tm )
       in
-      Mina_metrics.Block_latency.Gossip_slots.update
+      Block_latency_metrics.Gossip_slots.update
         (Float.of_int (tm_slot - tn_production_slot)) ;
-      Mina_metrics.Block_latency.Gossip_time.update
+      Block_latency_metrics.Gossip_time.update
         Block_time.(Span.to_time_span @@ diff tm tn_production_time) ;
       Deferred.unit
 
@@ -196,7 +205,7 @@ let log_rate_limiter_occasionally rl ~logger ~label =
         !"%s $rate_limiter" label )
 
 let create
-    { logger
+    ({ logger
     ; slot_duration_ms
     ; on_push
     ; time_controller
@@ -204,7 +213,8 @@ let create
     ; consensus_constants
     ; genesis_constants
     ; constraint_constants
-    } =
+    ; block_window_duration
+    } : block_sink_config ) =
   let rate_limiter =
     Network_pool.Rate_limiter.create
       ~capacity:
@@ -225,6 +235,7 @@ let create
       ; consensus_constants
       ; genesis_constants
       ; constraint_constants
+      ; block_window_duration
       } )
 
 let void = Void

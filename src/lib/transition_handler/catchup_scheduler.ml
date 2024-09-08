@@ -62,6 +62,7 @@ type t =
         Rose_tree.t
         list )
       Capped_supervisor.t
+  ; block_window_duration : Time.Span.t
   }
 
 let create ~logger ~precomputed_values ~verifier ~trust_system ~frontier
@@ -74,7 +75,7 @@ let create ~logger ~precomputed_values ~verifier ~trust_system ~frontier
          * [ `Ledger_catchup of unit Ivar.t | `Catchup_scheduler ]
        , crash buffered
        , unit )
-       Writer.t ) ~clean_up_signal =
+       Writer.t ) ~clean_up_signal ~block_window_duration =
   let collected_transitions = State_hash.Table.create () in
   let parent_root_timeouts = State_hash.Table.create () in
   let validation_callbacks = State_hash.Table.create () in
@@ -131,6 +132,7 @@ let create ~logger ~precomputed_values ~verifier ~trust_system ~frontier
   ; parent_root_timeouts
   ; breadcrumb_builder_supervisor
   ; validation_callbacks
+  ; block_window_duration
   }
 
 let mem t transition =
@@ -194,7 +196,7 @@ let rec remove_tree t parent_hash =
       let transition, _ = Envelope.Incoming.data (Cached.peek child) in
       remove_tree t (State_hash.With_state_hashes.state_hash transition) )
 
-let watch t ~timeout_duration ~cached_transition ~valid_cb =
+let watch t ~timeout_duration ~cached_transition ~valid_cb  =
   let transition_with_hash, _ =
     Envelope.Incoming.data (Cached.peek cached_transition)
   in
@@ -213,7 +215,7 @@ let watch t ~timeout_duration ~cached_transition ~valid_cb =
       | `Ok ->
           (* Clean up entry upon callback resolution *)
           upon
-            (Deferred.ignore_m @@ Mina_net2.Validation_callback.await data)
+            (Deferred.ignore_m @@ Mina_net2.Validation_callback.await ~block_window_duration:t.block_window_duration data)
             (fun () -> Hashtbl.remove t.validation_callbacks hash)
       | `Duplicate ->
           [%log' warn t.logger] "Double validation callback for $state_hash"
@@ -348,6 +350,7 @@ let%test_module "Transition_handler.Catchup_scheduler tests" =
     let%test_unit "catchup jobs fire after the timeout" =
       let timeout_duration = Block_time.Span.of_ms 200L in
       let test_delta = Block_time.Span.of_ms 100L in
+      let block_window_duration = Mina_compile_config.For_unit_tests.t.block_window_duration in
       Quickcheck.test ~trials:3
         (Transition_frontier.For_tests.gen_with_branch ~precomputed_values
            ~verifier ~max_length ~frontier_size:1 ~branch_size:2 () )
@@ -364,6 +367,7 @@ let%test_module "Transition_handler.Catchup_scheduler tests" =
           let scheduler =
             create ~frontier ~precomputed_values ~verifier ~catchup_job_writer
               ~catchup_breadcrumbs_writer ~clean_up_signal:(Ivar.create ())
+              ~block_window_duration
           in
           watch scheduler ~timeout_duration ~valid_cb:None
             ~cached_transition:
@@ -398,6 +402,7 @@ let%test_module "Transition_handler.Catchup_scheduler tests" =
                    invalidated" =
       let timeout_duration = Block_time.Span.of_ms 200L in
       let test_delta = Block_time.Span.of_ms 400L in
+      let block_window_duration = Mina_compile_config.For_unit_tests.t.block_window_duration in
       Quickcheck.test ~trials:3
         (Transition_frontier.For_tests.gen_with_branch ~precomputed_values
            ~verifier ~max_length ~frontier_size:1 ~branch_size:2 () )
@@ -424,6 +429,7 @@ let%test_module "Transition_handler.Catchup_scheduler tests" =
           let scheduler =
             create ~precomputed_values ~frontier ~verifier ~catchup_job_writer
               ~catchup_breadcrumbs_writer ~clean_up_signal:(Ivar.create ())
+              ~block_window_duration
           in
           watch scheduler ~timeout_duration ~valid_cb:None
             ~cached_transition:
@@ -485,6 +491,7 @@ let%test_module "Transition_handler.Catchup_scheduler tests" =
     let%test_unit "catchup scheduler should not create duplicate jobs when a \
                    sequence of transitions is added in reverse order" =
       let timeout_duration = Block_time.Span.of_ms 400L in
+      let block_window_duration = Mina_compile_config.For_unit_tests.t.block_window_duration in
       Quickcheck.test ~trials:3
         (Transition_frontier.For_tests.gen_with_branch ~precomputed_values
            ~verifier ~max_length ~frontier_size:1 ~branch_size:5 () )
@@ -500,6 +507,7 @@ let%test_module "Transition_handler.Catchup_scheduler tests" =
           let scheduler =
             create ~precomputed_values ~frontier ~verifier ~catchup_job_writer
               ~catchup_breadcrumbs_writer ~clean_up_signal:(Ivar.create ())
+              ~block_window_duration
           in
           let[@warning "-8"] (oldest_breadcrumb :: dependent_breadcrumbs) =
             List.rev branch

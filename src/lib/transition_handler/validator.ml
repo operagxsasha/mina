@@ -15,6 +15,8 @@ module type CONTEXT = sig
   val constraint_constants : Genesis_constants.Constraint_constants.t
 
   val consensus_constants : Consensus.Constants.t
+
+  val compile_config : Mina_compile_config.t
 end
 
 let validate_transition ~context:(module Context : CONTEXT) ~frontier
@@ -121,6 +123,9 @@ let run ~context:(module Context : CONTEXT) ~trust_system ~time_controller
        Writer.t ) ~unprocessed_transition_cache =
   let open Context in
   let module Lru = Core_extended_cache.Lru in
+  let module Perf_histograms = Perf_histograms.F(struct 
+    let block_window_duration = compile_config.block_window_duration
+  end) in
   let outdated_root_cache = Lru.create ~destruct:None 1000 in
   O1trace.background_thread "validate_blocks_against_frontier" (fun () ->
       Reader.iter transition_reader

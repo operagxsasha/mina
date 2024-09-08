@@ -25,6 +25,8 @@ module type CONTEXT = sig
   val constraint_constants : Genesis_constants.Constraint_constants.t
 
   val consensus_constants : Consensus.Constants.t
+
+  val compile_config : Mina_compile_config.t
 end
 
 (* TODO: calculate a sensible value from postake consensus arguments *)
@@ -44,12 +46,18 @@ let cached_transform_deferred_result ~transform_cached ~transform_result cached
 (* add a breadcrumb and perform post processing *)
 let add_and_finalize ~logger ~frontier ~catchup_scheduler
     ~processed_transition_writer ~only_if_present ~time_controller ~source
-    ~valid_cb cached_breadcrumb ~(precomputed_values : Precomputed_values.t) =
+    ~valid_cb cached_breadcrumb ~(precomputed_values : Precomputed_values.t) 
+    ~block_window_duration =
   let breadcrumb =
     if Cached.is_pure cached_breadcrumb then Cached.peek cached_breadcrumb
     else Cached.invalidate_with_success cached_breadcrumb
   in
   let consensus_constants = precomputed_values.consensus_constants in
+  let module Block_latency_metrics = Mina_metrics.Block_latency(
+    struct 
+      let block_window_duration = block_window_duration
+    end
+  ) in
   let transition =
     Transition_frontier.Breadcrumb.validated_transition breadcrumb
   in
@@ -94,7 +102,7 @@ let add_and_finalize ~logger ~frontier ~catchup_scheduler
           (Consensus.Data.Consensus_time.to_time ~constants:consensus_constants
              transition_time )
       in
-      Mina_metrics.Block_latency.Inclusion_time.update
+      Block_latency_metrics.Inclusion_time.update
         (Block_time.Span.to_time_span time_elapsed) ) ;
   [%log internal] "Add_and_finalize_done" ;
   if Writer.is_closed processed_transition_writer then
@@ -250,7 +258,8 @@ let process_transition ~context:(module Context : CONTEXT) ~trust_system
     let%map.Deferred result =
       add_and_finalize ~logger ~frontier ~catchup_scheduler
         ~processed_transition_writer ~only_if_present:false ~time_controller
-        ~source:`Gossip breadcrumb ~precomputed_values ~valid_cb
+        ~source:`Gossip breadcrumb ~precomputed_values ~valid_cb 
+        ~block_window_duration:Context.compile_config.block_window_duration
     in
     ( match result with
     | Ok () ->
@@ -291,11 +300,16 @@ let run ~context:(module Context : CONTEXT) ~verifier ~trust_system
   let catchup_scheduler =
     Catchup_scheduler.create ~logger ~precomputed_values ~verifier ~trust_system
       ~frontier ~time_controller ~catchup_job_writer ~catchup_breadcrumbs_writer
-      ~clean_up_signal:clean_up_catchup_scheduler
+      ~clean_up_signal:clean_up_catchup_scheduler ~block_window_duration:
+        Context.compile_config.block_window_duration
   in
+  let module Perf_histograms = Perf_histograms.F(struct 
+    let block_window_duration = Context.compile_config.block_window_duration
+  end) in
   let add_and_finalize =
     add_and_finalize ~frontier ~catchup_scheduler ~processed_transition_writer
-      ~time_controller ~precomputed_values
+      ~time_controller ~precomputed_values ~block_window_duration:
+        Context.compile_config.block_window_duration
   in
   let process_transition =
     process_transition
@@ -449,6 +463,8 @@ let%test_module "Transition_handler.Processor tests" =
 
     let constraint_constants = precomputed_values.constraint_constants
 
+    let compile_config = Mina_compile_config.For_unit_tests.t
+
     let time_controller = Block_time.Controller.basic ~logger
 
     let trust_system = Trust_system.null ()
@@ -468,6 +484,8 @@ let%test_module "Transition_handler.Processor tests" =
       let constraint_constants = constraint_constants
 
       let consensus_constants = precomputed_values.consensus_constants
+
+      let compile_config = compile_config
     end
 
     let downcast_breadcrumb breadcrumb =

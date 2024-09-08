@@ -37,6 +37,7 @@
    ppx_version.runtime
    consensus
    bounded_types
+   mina_compile_config
  )
  (inline_tests (flags -verbose -show-counts))
  (instrumentation (backend bisect_ppx))

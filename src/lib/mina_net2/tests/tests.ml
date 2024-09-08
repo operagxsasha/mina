@@ -8,6 +8,7 @@ open Inline_test_quiet_logs
 let%test_module "Mina network tests" =
   ( module struct
     let logger = Logger.create ()
+    let block_window_duration = Mina_compile_config.For_unit_tests.t.block_window_duration
 
     let pids = Child_processes.Termination.create_pid_table ()
 
@@ -19,21 +20,21 @@ let%test_module "Mina network tests" =
         create ~all_peers_seen_metric:false
           ~logger:(Logger.extend logger [ ("name", `String "a") ])
           ~conf_dir:a_tmp ~pids ~on_peer_connected:Fn.ignore
-          ~on_peer_disconnected:Fn.ignore ()
+          ~on_peer_disconnected:Fn.ignore ~block_window_duration ()
         >>| Or_error.ok_exn
       in
       let%bind b =
         create ~all_peers_seen_metric:false
           ~logger:(Logger.extend logger [ ("name", `String "b") ])
           ~conf_dir:b_tmp ~pids ~on_peer_connected:Fn.ignore
-          ~on_peer_disconnected:Fn.ignore ()
+          ~on_peer_disconnected:Fn.ignore ~block_window_duration ()
         >>| Or_error.ok_exn
       in
       let%bind c =
         create ~all_peers_seen_metric:false
           ~logger:(Logger.extend logger [ ("name", `String "c") ])
           ~conf_dir:c_tmp ~pids ~on_peer_connected:Fn.ignore
-          ~on_peer_disconnected:Fn.ignore ()
+          ~on_peer_disconnected:Fn.ignore ~block_window_duration ()
         >>| Or_error.ok_exn
       in
       let%bind kp_a = generate_random_keypair a in

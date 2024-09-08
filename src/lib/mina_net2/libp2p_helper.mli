@@ -1,4 +1,5 @@
 open Async_kernel
+open Core_kernel
 
 exception Libp2p_helper_died_unexpectedly
 
@@ -16,6 +17,7 @@ val spawn :
        (   t
         -> Libp2p_ipc.Reader.DaemonInterface.PushMessage.unnamed_union_t
         -> unit Deferred.t )
+  -> block_window_duration:Time.Span.t
   -> unit
   -> t Deferred.Or_error.t
 
@@ -48,4 +50,5 @@ val test_with_libp2p_helper :
         -> Libp2p_ipc.Reader.DaemonInterface.PushMessage.unnamed_union_t
         -> unit Deferred.t )
   -> (string -> t -> 'a Deferred.t)
+  -> block_window_duration:Time.Span.t
   -> 'a

@@ -50,8 +50,9 @@ let unsubscribe ~helper sub =
   else Deferred.Or_error.error_string "already unsubscribed"
 
 let handle_and_validate sub ~validation_expiration ~(sender : Peer.t)
-    ~data:raw_data =
+    ~data:raw_data ~block_window_duration =
   let open Libp2p_ipc.Reader.ValidationResult in
+  let module Network_metrics = Mina_metrics.Network(struct let block_window_duration = block_window_duration end) in
   let wrap_message data =
     if
       Unix.Inet_addr.equal sender.host (Unix.Inet_addr.of_string "127.0.0.1")
@@ -65,7 +66,7 @@ let handle_and_validate sub ~validation_expiration ~(sender : Peer.t)
         Validation_callback.create validation_expiration
       in
       let%bind () = sub.validator (wrap_message data) validation_callback in
-      match%map Validation_callback.await validation_callback with
+      match%map Validation_callback.await ~block_window_duration validation_callback with
       | Some `Accept ->
           `Validation_result Accept
       | Some `Reject ->
@@ -80,7 +81,7 @@ let handle_and_validate sub ~validation_expiration ~(sender : Peer.t)
           ()
       | `Call f ->
           f (wrap_message raw_data) e ) ;
-      Mina_metrics.(Counter.inc_one Network.gossip_messages_failed_to_decode) ;
+      Mina_metrics.(Counter.inc_one Network_metrics.gossip_messages_failed_to_decode) ;
       return (`Decoding_error e)
 
 let publish_raw ~logger ~helper ~topic data =

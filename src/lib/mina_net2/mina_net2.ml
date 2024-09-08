@@ -84,6 +84,7 @@ type t =
   { conf_dir : string
   ; helper : Libp2p_helper.t
   ; logger : Logger.t
+  ; block_window_duration : Time.Span.t
   ; my_keypair : Keypair.t Ivar.t
   ; subscriptions : Subscription.e Subscription.Id.Table.t
         (* we use string as the key here because there is no hashable instance for Uint64.t *)
@@ -354,6 +355,7 @@ let handle_push_message t push_message =
   let handle name f =
     O1trace.sync_thread ("handle_libp2p_ipc_push_" ^ name) f
   in
+  let module Network_metrics = Mina_metrics.Network(struct let block_window_duration = t.block_window_duration end) in
   match push_message with
   | PeerConnected m ->
       handle "peer_connected" (fun () ->
@@ -382,7 +384,7 @@ let handle_push_message t push_message =
               upon
                 (O1trace.thread "validate_libp2p_gossip" (fun () ->
                      Subscription.handle_and_validate sub ~validation_expiration
-                       ~sender ~data ) )
+                       ~sender ~data ~block_window_duration:t.block_window_duration) )
                 (function
                   | `Validation_timeout ->
                       [%log' warn t.logger]
@@ -424,7 +426,7 @@ let handle_push_message t push_message =
               in
               t.all_peers_seen <- Some all_peers_seen ;
               Mina_metrics.(
-                Gauge.set Network.all_peers
+                Gauge.set Network_metrics.all_peers
                   (Set.length all_peers_seen |> Int.to_float)) ) ;
           let stream =
             Libp2p_stream.create_from_existing ~logger:t.logger ~helper:t.helper
@@ -543,7 +545,7 @@ let handle_push_message t push_message =
       Libp2p_ipc.undefined_union ~context:"DaemonInterface.PushMessage" n
 
 let create ?(allow_multiple_instances = false) ~all_peers_seen_metric ~logger
-    ~pids ~conf_dir ~on_peer_connected ~on_peer_disconnected () =
+    ~pids ~conf_dir ~on_peer_connected ~on_peer_disconnected ~block_window_duration () =
   let open Deferred.Or_error.Let_syntax in
   let push_message_handler =
     ref (fun _msg ->
@@ -555,6 +557,7 @@ let create ?(allow_multiple_instances = false) ~all_peers_seen_metric ~logger
         Libp2p_helper.spawn ~allow_multiple_instances ~logger ~pids ~conf_dir
           ~handle_push_message:(fun _helper msg ->
             Deferred.return (!push_message_handler msg) )
+          ~block_window_duration
           () )
   in
   let t =
@@ -574,6 +577,7 @@ let create ?(allow_multiple_instances = false) ~all_peers_seen_metric ~logger
     ; peer_disconnected_callback =
         (fun peer_id -> on_peer_disconnected (Peer.Id.unsafe_of_string peer_id))
     ; protocol_handlers = Hashtbl.create (module String)
+    ; block_window_duration
     }
   in
   (push_message_handler := fun msg -> handle_push_message t msg) ;

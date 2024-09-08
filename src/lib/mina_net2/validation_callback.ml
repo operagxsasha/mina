@@ -52,28 +52,36 @@ module type Metric_intf = sig
   end
 end
 
-let metrics_of_message_type m : (module Metric_intf) option =
+let metrics_of_message_type ~block_window_duration m : (module Metric_intf) option =
+  let module Network_metrics =
+    Mina_metrics.Network (struct
+      let block_window_duration = block_window_duration
+    end)
+  in
   match m with
   | `Unknown ->
       None
   | `Block ->
-      Some (module Mina_metrics.Network.Block)
+      Some (module Network_metrics.Block)
   | `Snark_work ->
-      Some (module Mina_metrics.Network.Snark_work)
+      Some (module Network_metrics.Snark_work)
   | `Transaction ->
-      Some (module Mina_metrics.Network.Transaction)
+      Some (module Network_metrics.Transaction)
 
-let record_timeout_metrics cb =
-  Mina_metrics.(Counter.inc_one Network.validations_timed_out) ;
-  match metrics_of_message_type cb.message_type with
+let record_timeout_metrics ~block_window_duration cb =
+  let module Network_metrics = Mina_metrics.Network (struct
+    let block_window_duration = block_window_duration
+  end) in
+  Mina_metrics.(Counter.inc_one Network_metrics.validations_timed_out) ;
+  match metrics_of_message_type ~block_window_duration cb.message_type with
   | None ->
       ()
   | Some (module M) ->
       Mina_metrics.Counter.inc_one M.validations_timed_out
 
 let record_validation_metrics message_type (result : validation_result)
-    validation_time processing_time =
-  match metrics_of_message_type message_type with
+    validation_time processing_time ~block_window_duration =
+  match metrics_of_message_type ~block_window_duration message_type with
   | None ->
       ()
   | Some (module M) -> (
@@ -98,8 +106,8 @@ let await_timeout cb =
           ( Time_ns.Span.to_span_float_round_nearest
           @@ Time_ns.diff expires_at (Time_ns.now ()) )
 
-let await cb =
-  if is_expired cb then (record_timeout_metrics cb ; Deferred.return None)
+let await ~block_window_duration cb =
+  if is_expired cb then (record_timeout_metrics ~block_window_duration cb ; Deferred.return None)
   else
     match cb.expiration with
     | None ->
@@ -120,13 +128,13 @@ let await cb =
               |> Time_ns.Span.to_ms |> Time.Span.of_ms
             in
             record_validation_metrics cb.message_type result validation_time
-              processing_time ;
+              processing_time ~block_window_duration ;
             Some result
         | `Timeout ->
-            record_timeout_metrics cb ; None )
+            record_timeout_metrics cb ~block_window_duration ; None )
 
-let await_exn cb =
-  match%map await cb with None -> failwith "timeout" | Some result -> result
+let await_exn ~block_window_duration cb =
+  match%map await ~block_window_duration cb with None -> failwith "timeout" | Some result -> result
 
 let fire_if_not_already_fired cb result =
   if not (is_expired cb) then (

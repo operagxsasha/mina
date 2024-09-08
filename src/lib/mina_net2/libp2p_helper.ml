@@ -170,15 +170,16 @@ let handle_libp2p_helper_termination t ~pids ~killed result =
       ~metadata:[ ("exit_status", exit_status) ] ;
     Deferred.unit
 
-let handle_incoming_message t msg ~handle_push_message =
+let handle_incoming_message t msg ~handle_push_message ~block_window_duration =
   let open Libp2p_ipc.Reader in
   let open DaemonInterface.Message in
+  let module Network_metrics = Mina_metrics.Network(struct let block_window_duration = block_window_duration end) in
   let record_message_delay time_sent_ipc =
     let message_delay =
       Time_ns.diff (Time_ns.now ())
         (Libp2p_ipc.unix_nano_to_time_span time_sent_ipc)
     in
-    Mina_metrics.Network.(
+    Network_metrics.(
       Ipc_latency_histogram.observe ipc_latency_ns_summary
         (Time_ns.Span.to_ns message_delay))
   in
@@ -225,8 +226,9 @@ let handle_incoming_message t msg ~handle_push_message =
       Deferred.unit
 
 let spawn ?(allow_multiple_instances = false) ~logger ~pids ~conf_dir
-    ~handle_push_message () =
+    ~handle_push_message ~block_window_duration () =
   let termination_handler = ref (fun ~killed:_ _result -> Deferred.unit) in
+  let module Network_metrics = Mina_metrics.Network(struct let block_window_duration = block_window_duration end) in
   match%map
     O1trace.thread "manage_libp2p_helper_subprocess" (fun () ->
         Child_processes.start_custom ~allow_multiple_instances ~logger
@@ -264,7 +266,7 @@ let spawn ?(allow_multiple_instances = false) ~logger ~pids ~conf_dir
             |> Strict_pipe.Reader.iter ~f:(fun line ->
                    Mina_metrics.(
                      Counter.inc_one
-                       Mina_metrics.Network.ipc_logs_received_total) ;
+                       Network_metrics.ipc_logs_received_total) ;
                    let record_result =
                      try
                        Some
@@ -294,7 +296,7 @@ let spawn ?(allow_multiple_instances = false) ~logger ~pids ~conf_dir
                      Libp2p_ipc.Reader.DaemonInterface.Message.get msg
                    in
                    if not t.finished then
-                     handle_incoming_message t msg ~handle_push_message
+                     handle_incoming_message t msg ~handle_push_message ~block_window_duration
                    else Deferred.unit
                | Error error ->
                    [%log error]
@@ -374,12 +376,12 @@ let send_heartbeat ~peer_id =
     ~msg:(Libp2p_ipc.create_heartbeat_peer_push_message ~peer_id)
 
 let test_with_libp2p_helper ?(logger = Logger.null ())
-    ?(handle_push_message = fun _ -> assert false) f =
+    ?(handle_push_message = fun _ -> assert false) f ~block_window_duration =
   let pids = Pid.Table.create () in
   Thread_safe.block_on_async_exn (fun () ->
       let%bind conf_dir = Async.Unix.mkdtemp "libp2p_helper_test" in
       let%bind helper =
-        spawn ~logger ~pids ~conf_dir ~handle_push_message ()
+        spawn ~logger ~pids ~conf_dir ~handle_push_message ~block_window_duration ()
         >>| Or_error.ok_exn
       in
       Monitor.protect
@@ -391,6 +393,8 @@ let test_with_libp2p_helper ?(logger = Logger.null ())
 let%test_module "bitswap blocks" =
   ( module struct
     open Staged_ledger_diff.Bitswap_block
+
+    let block_window_duration = Mina_compile_config.For_unit_tests.t.block_window_duration
 
     let%test_unit "forall x: libp2p_helper#decode (daemon#encode x) = x" =
       Quickcheck.test For_tests.gen ~trials:100
@@ -406,6 +410,7 @@ let%test_module "bitswap blocks" =
                     ~root_block_hash
                 in
                 do_rpc helper (module TestDecodeBitswapBlocks) request )
+                ~block_window_duration
             |> Or_error.ok_exn
             |> Libp2p_ipc.Reader.Libp2pHelperInterface.TestDecodeBitswapBlocks
                .Response
@@ -425,6 +430,7 @@ let%test_module "bitswap blocks" =
                       ~data:(Bigstring.to_string data)
                   in
                   do_rpc helper (module TestEncodeBitswapBlocks) request )
+                  ~block_window_duration
               |> Or_error.ok_exn
             in
             let open Libp2p_ipc.Reader in

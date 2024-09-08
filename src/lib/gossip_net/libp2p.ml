@@ -52,6 +52,7 @@ module Config = struct
     ; mutable keypair : Mina_net2.Keypair.t option
     ; all_peers_seen_metric : bool
     ; known_private_ip_nets : Core.Unix.Cidr.t list
+    ; block_window_duration : Time.Span.t
     }
   [@@deriving make]
 end
@@ -137,7 +138,7 @@ module Make (Rpc_interface : RPC_INTERFACE) :
 
     (* TODO: should we share this with the Fake network impl? *)
     let setup_rpc (type query response) ctx logger trust_system
-        (rpc : (query, response) Rpc_interface.rpc) =
+        (rpc : (query, response) Rpc_interface.rpc) ~block_window_duration =
       let (module Impl) = Rpc_interface.implementation rpc in
       let log_rate_limiter_occasionally rl =
         let t = Time.Span.of_min 1. in
@@ -150,9 +151,12 @@ module Make (Rpc_interface : RPC_INTERFACE) :
       let rl =
         Network_pool.Rate_limiter.create ~capacity:Impl.rate_limit_budget
       in
+      let module Network_metrics = Mina_metrics.Network (struct
+        let block_window_duration = block_window_duration
+      end) in
       log_rate_limiter_occasionally rl ;
       let handler (peer : Network_peer.Peer.t) ~version request =
-        Mina_metrics.(Counter.inc_one Network.rpc_requests_received) ;
+        Mina_metrics.(Counter.inc_one Network_metrics.rpc_requests_received) ;
         Mina_metrics.(Counter.inc_one @@ fst Impl.received_counter) ;
         Mina_metrics.(Gauge.inc_one @@ snd Impl.received_counter) ;
         match
@@ -219,7 +223,9 @@ module Make (Rpc_interface : RPC_INTERFACE) :
         ctx first_peer_ivar high_connectivity_ivar ~added_seeds ~pids
         ~on_unexpected_termination
         ~sinks:
-          (Message.Any_sinks (sinksM, (sink_block, sink_tx, sink_snark_work))) =
+          (Message.Any_sinks (sinksM, (sink_block, sink_tx, sink_snark_work))) 
+        ~block_window_duration
+          =
       let module Sinks = (val sinksM) in
       let ctr = ref 0 in
       let record_peer_connection () =
@@ -256,7 +262,7 @@ module Make (Rpc_interface : RPC_INTERFACE) :
                   ~all_peers_seen_metric:config.all_peers_seen_metric
                   ~on_peer_connected:(fun _ -> record_peer_connection ())
                   ~on_peer_disconnected:ignore ~logger:config.logger ~conf_dir
-                  ~pids () ) )
+                  ~pids ~block_window_duration () ) )
       with
       | Ok (Ok net2) -> (
           let open Mina_net2 in
@@ -351,7 +357,7 @@ module Make (Rpc_interface : RPC_INTERFACE) :
             in
             let implementation_list =
               List.bind Rpc_interface.all_rpcs ~f:(fun (Rpc rpc) ->
-                  setup_rpc ctx config.logger config.trust_system rpc )
+                  setup_rpc ctx config.logger config.trust_system rpc ~block_window_duration)
             in
             let implementations =
               let handle_unknown_rpc conn_state ~rpc_tag ~version =
@@ -581,6 +587,9 @@ module Make (Rpc_interface : RPC_INTERFACE) :
              (`Capacity 0, `Overflow (Strict_pipe.Drop_head ignore)) )
       in
       let added_seeds = Peer.Hash_set.create () in
+      let module Network_metrics = Mina_metrics.Network (struct
+        let block_window_duration = config.block_window_duration
+      end) in
       let%bind () =
         let rec on_libp2p_create res =
           net2_ref :=
@@ -627,7 +636,8 @@ module Make (Rpc_interface : RPC_INTERFACE) :
           let libp2p =
             create_libp2p ~allow_multiple_instances config rpc_handlers
               first_peer_ivar high_connectivity_ivar ~added_seeds ~pids
-              ~on_unexpected_termination:restart_libp2p ~sinks
+              ~on_unexpected_termination:restart_libp2p ~sinks 
+              ~block_window_duration:config.block_window_duration
           in
           on_libp2p_create libp2p ; Deferred.ignore_m libp2p
         and restart_libp2p () = don't_wait_for (start_libp2p ()) in
@@ -711,7 +721,7 @@ module Make (Rpc_interface : RPC_INTERFACE) :
           O1trace.thread "snapshot_peers" (fun () ->
               let%map peers = peers t in
               Mina_metrics.(
-                Gauge.set Network.peers (List.length peers |> Int.to_float)) ;
+                Gauge.set Network_metrics.peers (List.length peers |> Int.to_float)) ;
               peers_snapshot :=
                 List.map peers
                   ~f:
@@ -764,6 +774,9 @@ module Make (Rpc_interface : RPC_INTERFACE) :
         -> q Deferred.Or_error.t =
      fun ?heartbeat_timeout ?timeout ~rpc_counter ~rpc_failed_counter ~rpc_name
          t peer transport dispatch query ->
+      let module Network_metrics = Mina_metrics.Network (struct
+        let block_window_duration = t.config.block_window_duration
+      end) in
       let call () =
         Monitor.try_with ~here:[%here] (fun () ->
             (* Async_rpc_kernel takes a transport instead of a Reader.t *)
@@ -779,7 +792,7 @@ module Make (Rpc_interface : RPC_INTERFACE) :
               ~dispatch_queries:(fun conn ->
                 Versioned_rpc.Connection_with_menu.create conn
                 >>=? fun conn' ->
-                Mina_metrics.(Counter.inc_one Network.rpc_requests_sent) ;
+                Mina_metrics.(Counter.inc_one Network_metrics.rpc_requests_sent) ;
                 Mina_metrics.(Counter.inc_one @@ fst rpc_counter) ;
                 Mina_metrics.(Gauge.inc_one @@ snd rpc_counter) ;
                 let d = dispatch conn' query in
@@ -829,7 +842,7 @@ module Make (Rpc_interface : RPC_INTERFACE) :
                   ; _rpc_tag
                   ; _rpc_version
                   ] ) ->
-                Mina_metrics.(Counter.inc_one Network.rpc_connections_failed) ;
+                Mina_metrics.(Counter.inc_one Network_metrics.rpc_connections_failed) ;
                 let%map () =
                   Trust_system.(
                     record t.config.trust_system t.config.logger peer
@@ -894,6 +907,9 @@ module Make (Rpc_interface : RPC_INTERFACE) :
 
     let query_peer ?heartbeat_timeout ?timeout t (peer_id : Peer.Id.t) rpc
         rpc_input =
+      let module Network_metrics = Mina_metrics.Network (struct
+        let block_window_duration = t.config.block_window_duration
+      end) in
       let%bind net2 = !(t.net2) in
       match%bind
         Mina_net2.open_stream net2 ~protocol:rpc_transport_proto ~peer:peer_id
@@ -906,11 +922,14 @@ module Make (Rpc_interface : RPC_INTERFACE) :
           >>| fun data ->
           Connected (Envelope.Incoming.wrap_peer ~data ~sender:peer)
       | Error e ->
-          Mina_metrics.(Counter.inc_one Network.rpc_connections_failed) ;
+          Mina_metrics.(Counter.inc_one Network_metrics.rpc_connections_failed) ;
           return (Failed_to_connect e)
 
     let query_peer' (type q r) ?how ?heartbeat_timeout ?timeout t
         (peer_id : Peer.Id.t) (rpc : (q, r) Rpc_interface.rpc) (qs : q list) =
+      let module Network_metrics = Mina_metrics.Network (struct
+        let block_window_duration = t.config.block_window_duration
+      end) in
       let%bind net2 = !(t.net2) in
       match%bind
         Mina_net2.open_stream net2 ~protocol:rpc_transport_proto ~peer:peer_id
@@ -930,7 +949,7 @@ module Make (Rpc_interface : RPC_INTERFACE) :
           >>| fun data ->
           Connected (Envelope.Incoming.wrap_peer ~data ~sender:peer)
       | Error e ->
-          Mina_metrics.(Counter.inc_one Network.rpc_connections_failed) ;
+          Mina_metrics.(Counter.inc_one Network_metrics.rpc_connections_failed) ;
           return (Failed_to_connect e)
 
     let query_random_peers t n rpc query =

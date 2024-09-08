@@ -148,6 +148,8 @@ let%test_module "Block storage tests" =
     let () =
       Backtrace.elide := false ;
       Async.Scheduler.set_record_backtraces true
+    
+    let block_window_duration = Mina_compile_config.For_unit_tests.t.block_window_duration
 
     let logger = Logger.create ()
 
@@ -178,6 +180,7 @@ let%test_module "Block storage tests" =
             Deferred.unit
           in
           Helper.test_with_libp2p_helper ~logger ~handle_push_message
+            ~block_window_duration
             (fun conf_dir helper ->
               let%bind me = generate_random_keypair helper in
               let maddr =

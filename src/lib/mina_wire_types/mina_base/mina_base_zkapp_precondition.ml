@@ -76,9 +76,10 @@ module Account = struct
   end
 end
 
-module Permisions = struct
-  module V1 = struct
-    (* TODO how should I version this? *)
-    type t = { editState : bool }
+module Permissions = struct
+  module V2 = struct
+    type t =
+      { dummy_bool : bool Mina_base_zkapp_basic.Or_ignore.V1.t
+      }
   end
 end

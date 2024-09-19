@@ -1002,6 +1002,74 @@ module Account_precondition = struct
   let nonce ({ nonce; _ } : t) = nonce
 end
 
+module Permissions_precondition = struct
+  [%%versioned
+  module Stable = struct
+    module V1 = struct
+      type t = Zkapp_precondition.Permissions.Stable.V2.t
+      [@@deriving sexp, yojson, hash]
+
+      let (_ :
+            ( t
+            , Mina_wire_types.Mina_base.Account_update.Permissions_precondition.V1.t
+            )
+            Type_equal.t ) =
+        Type_equal.T
+
+      let to_latest = Fn.id
+
+      [%%define_locally Zkapp_precondition.Permissions.(equal, compare)]
+    end
+  end]
+
+  [%%define_locally Stable.Latest.(equal, compare)]
+
+  let gen : t Quickcheck.Generator.t =
+    (* we used to have 3 constructors, Full, Nonce, and Accept for the type t
+       nowadays, the generator creates these 3 different kinds of values, but all mapped to t
+    *)
+    Quickcheck.Generator.variant2
+      Quickcheck.Generator.bool
+      Quickcheck.Generator.bool (* TODO this should be unit? or maybe there's just a cleaner way to write this*)
+      |> Quickcheck.Generator.map ~f:(function
+         | `A b -> Zkapp_precondition.Permissions.from_bool b
+         | `B _ -> Zkapp_precondition.Permissions.accept
+      )
+
+  module Tag = struct
+    type t = Full | Nonce | Accept [@@deriving equal, compare, sexp, yojson]
+  end
+
+  let deriver obj = Zkapp_precondition.Permissions.deriver obj
+
+  let digest (t : t) =
+    let digest x =
+      Random_oracle.(
+        hash ~init:Hash_prefix_states.account_update_account_precondition
+          (pack_input x))
+    in
+    t |> Zkapp_precondition.Permissions.to_input |> digest
+
+  module Checked = struct
+    type t = Zkapp_precondition.Permissions.Checked.t
+
+    let digest (t : t) =
+      let digest x =
+        Random_oracle.Checked.(
+          hash ~init:Hash_prefix_states.account_update_account_precondition
+            (pack_input x))
+      in
+      Zkapp_precondition.Permissions.Checked.to_input t |> digest
+
+    (* let nonce (t : t) = t.nonce *)
+  end
+
+  let typ () : (Zkapp_precondition.Permissions.Checked.t, t) Typ.t =
+    Zkapp_precondition.Permissions.typ ()
+
+  (* let nonce ({ nonce; _ } : t) = nonce *)
+end
+
 module Preconditions = struct
   [%%versioned
   module Stable = struct
@@ -1009,7 +1077,7 @@ module Preconditions = struct
       type t = Mina_wire_types.Mina_base.Account_update.Preconditions.V1.t =
         { network : Zkapp_precondition.Protocol_state.Stable.V1.t
         ; account : Account_precondition.Stable.V1.t
-        ; test : Account_precondition.Stable.V1.t
+        ; permissions : Permissions_precondition.Stable.V1.t
         ; valid_while :
             Mina_numbers.Global_slot_since_genesis.Stable.V1.t
             Zkapp_precondition.Numeric.Stable.V1.t
@@ -1026,15 +1094,15 @@ module Preconditions = struct
     Fields.make_creator obj
       ~network:!.Zkapp_precondition.Protocol_state.deriver
       ~account:!.Account_precondition.deriver
-      ~test:!.Account_precondition.deriver
+      ~permissions:!.Permissions_precondition.deriver
       ~valid_while:!.Zkapp_precondition.Valid_while.deriver
     |> finish "Preconditions" ~t_toplevel_annots
 
-  let to_input ({ network; account; valid_while; test } : t) =
+  let to_input ({ network; account; valid_while; permissions } : t) =
     List.reduce_exn ~f:Random_oracle_input.Chunked.append
       [ Zkapp_precondition.Protocol_state.to_input network
       ; Zkapp_precondition.Account.to_input account
-      ; Zkapp_precondition.Account.to_input test
+      ; Zkapp_precondition.Permissions.to_input permissions
       ; Zkapp_precondition.Valid_while.to_input valid_while
       ]
 
@@ -1042,9 +1110,9 @@ module Preconditions = struct
     let open Quickcheck.Generator.Let_syntax in
     let%map network = Zkapp_precondition.Protocol_state.gen
     and account = Account_precondition.gen
-    and test = Account_precondition.gen
+    and permissions = Permissions_precondition.gen
     and valid_while = Zkapp_precondition.Valid_while.gen in
-    { network; account; valid_while; test }
+    { network; account; valid_while; permissions }
 
   module Checked = struct
     module Type_of_var (V : sig
@@ -1061,16 +1129,16 @@ module Preconditions = struct
     type t =
       { network : Zkapp_precondition.Protocol_state.Checked.t
       ; account : Account_precondition.Checked.t
-      ; test : Account_precondition.Checked.t
+      ; permissions : Permissions_precondition.Checked.t
       ; valid_while : Zkapp_precondition.Valid_while.Checked.t
       }
     [@@deriving annot, hlist, fields]
 
-    let to_input ({ network; account; valid_while; test } : t) =
+    let to_input ({ network; account; valid_while; permissions } : t) =
       List.reduce_exn ~f:Random_oracle_input.Chunked.append
         [ Zkapp_precondition.Protocol_state.Checked.to_input network
         ; Zkapp_precondition.Account.Checked.to_input account
-        ; Zkapp_precondition.Account.Checked.to_input test
+        ; Zkapp_precondition.Permissions.Checked.to_input permissions
         ; Zkapp_precondition.Valid_while.Checked.to_input valid_while
         ]
   end
@@ -1079,7 +1147,7 @@ module Preconditions = struct
     Typ.of_hlistable
       [ Zkapp_precondition.Protocol_state.typ
       ; Account_precondition.typ ()
-      ; Account_precondition.typ ()
+      ; Permissions_precondition.typ () (* TODO why does account have the unit arg, do I need it too? *)
       ; Zkapp_precondition.Valid_while.typ
       ]
       ~var_to_hlist:Checked.to_hlist ~var_of_hlist:Checked.of_hlist
@@ -1088,7 +1156,7 @@ module Preconditions = struct
   let accept =
     { network = Zkapp_precondition.Protocol_state.accept
     ; account = Zkapp_precondition.Account.accept
-    ; test = Zkapp_precondition.Account.accept
+    ; permissions = Zkapp_precondition.Permissions.accept
     ; valid_while = Ignore
     }
 end
@@ -1375,7 +1443,7 @@ module Body = struct
                    }
              } )
         ; account = Zkapp_precondition.Account.nonce t.nonce
-        ; test = Zkapp_precondition.Account.nonce t.nonce
+        ; permissions = Zkapp_precondition.Permissions.accept
         ; valid_while = Ignore
         }
     ; use_full_commitment = true
@@ -1408,7 +1476,7 @@ module Body = struct
                    }
              } )
         ; account = Zkapp_precondition.Account.nonce t.nonce
-        ; test = Zkapp_precondition.Account.nonce t.nonce
+        ; permissions = Zkapp_precondition.Permissions.accept
         ; valid_while = Ignore
         }
     ; use_full_commitment = true

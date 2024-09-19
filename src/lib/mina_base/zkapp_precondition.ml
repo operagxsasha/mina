@@ -769,6 +769,140 @@ module Account = struct
       (checks ~new_account t a)
 end
 
+module Permissions = struct
+  [%%versioned
+  module Stable = struct
+    module V2 = struct
+      type t = Mina_wire_types.Mina_base.Zkapp_precondition.Permissions.V2.t =
+        { dummy_bool : bool Eq_data.Stable.V1.t
+        }
+      [@@deriving annot, hlist, sexp, equal, yojson, hash, compare, fields]
+
+      let to_latest = Fn.id
+    end
+  end]
+
+  let gen : t Quickcheck.Generator.t =
+    let open Quickcheck.Let_syntax in
+    let%map dummy_bool = Or_ignore.gen Quickcheck.Generator.bool in
+    { dummy_bool
+    }
+
+  let accept : t =
+    { dummy_bool = Ignore
+    }
+
+  let is_accept : t -> bool = equal accept
+
+  let from_bool (dummy : bool) : t = {dummy_bool = Check dummy}
+
+  (*
+  let nonce (n : Permissions.Nonce.t) =
+    let nonce : _ Numeric.t = Check { lower = n; upper = n } in
+    { accept with nonce }
+
+  let is_nonce (t : t) =
+    match t.nonce with
+    | Ignore ->
+        false
+    | Check { lower; upper } ->
+        (* nonce is exact, all other fields are Ignore *)
+        Mina_numbers.Account_nonce.equal lower upper
+        && is_accept { t with nonce = Ignore }
+  *)
+
+  let deriver obj =
+    let open Fields_derivers_zkapps in
+    let ( !. ) = ( !. ) ~t_fields_annots in
+    Fields.make_creator obj ~dummy_bool:!.(Or_ignore.deriver bool)
+    |> finish "PermissionsPrecondition" ~t_toplevel_annots
+
+    (*
+  let%test_unit "json roundtrip" =
+    let b = Balance.of_nanomina_int_exn 1000 in
+    let predicate : t =
+      { accept with
+        balance = Or_ignore.Check { Closed_interval.lower = b; upper = b }
+      ; action_state = Or_ignore.Check (Field.of_int 99)
+      ; proved_state = Or_ignore.Check true
+      }
+    in
+    let module Fd = Fields_derivers_zkapps.Derivers in
+    let full = deriver (Fd.o ()) in
+    [%test_eq: t] predicate (predicate |> Fd.to_json full |> Fd.of_json full)
+    *)
+
+  let to_input
+      ({ dummy_bool } :
+        t ) =
+    let open Random_oracle_input.Chunked in
+    List.reduce_exn ~f:append
+      [ Eq_data.(to_input Tc.boolean) dummy_bool
+      ]
+
+  let digest t =
+    Random_oracle.(
+      hash ~init:Hash_prefix.zkapp_precondition_account
+        (pack_input (to_input t)))
+
+  module Checked = struct
+    type t =
+      { dummy_bool : Boolean.var Eq_data.Checked.t
+      }
+    [@@deriving hlist]
+
+    let to_input
+        ({ dummy_bool
+         } :
+          t ) =
+      let open Random_oracle_input.Chunked in
+      List.reduce_exn ~f:append
+        [ Eq_data.(to_input_checked Tc.boolean) dummy_bool
+        ]
+
+    open Impl
+
+    let checks ~new_account:_
+        { dummy_bool
+        } ( _a ) (* TODO what type should this have what does this do? *) =
+      [ ( Transaction_status.Failure.Account_is_new_precondition_unsatisfied
+            (* TODO NEW FAILURE TYPE *)
+          , Eq_data.(check_checked Tc.boolean dummy_bool (Boolean.var_of_value true)))
+        (* For now just check the dummy var is true *)
+      ]
+
+    let check ~new_account ~check t a =
+      List.iter
+        ~f:(fun (failure, passed) -> check failure passed)
+        (checks ~new_account t a)
+
+    let digest (t : t) =
+      Random_oracle.Checked.(
+        hash ~init:Hash_prefix.zkapp_precondition_account
+          (pack_input (to_input t)))
+  end
+
+  let typ () : (Checked.t, t) Typ.t =
+    (* let open Leaf_typs in *)
+    Typ.of_hlistable
+      [ Or_ignore.typ Boolean.typ ~ignore:false
+      ]
+      ~var_to_hlist:Checked.to_hlist ~var_of_hlist:Checked.of_hlist
+      ~value_to_hlist:to_hlist ~value_of_hlist:of_hlist
+
+  let checks ~new_account:_
+      { dummy_bool
+      } (_a : Permissions.t) =
+   [ ( Transaction_status.Failure.Account_is_new_precondition_unsatisfied
+        , Eq_data.(check ~label:"is_new" Tc.boolean dummy_bool true) )
+      ]
+
+  let check ~new_account ~check t a =
+    List.iter
+      ~f:(fun (failure, res) -> check failure (Result.is_ok res))
+      (checks ~new_account t a)
+end
+
 module Protocol_state = struct
   (* On each numeric field, you may assert a range
      On each hash field, you may assert an equality

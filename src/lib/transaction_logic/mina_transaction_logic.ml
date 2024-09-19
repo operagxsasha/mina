@@ -2794,7 +2794,7 @@ module For_tests = struct
                     { Account_update.Preconditions.network =
                         Zkapp_precondition.Protocol_state.accept
                     ; account = Zkapp_precondition.Account.accept
-                    ; test = Zkapp_precondition.Account.accept
+                    ; permissions = Zkapp_precondition.Permissions.accept
                     ; valid_while = Ignore
                     }
                 ; may_use_token = No
@@ -2822,7 +2822,7 @@ module For_tests = struct
                     { Account_update.Preconditions.network =
                         Zkapp_precondition.Protocol_state.accept
                     ; account = Zkapp_precondition.Account.accept
-                    ; test = Zkapp_precondition.Account.accept
+                    ; permissions = Zkapp_precondition.Permissions.accept
                     ; valid_while = Ignore
                     }
                 ; may_use_token = No

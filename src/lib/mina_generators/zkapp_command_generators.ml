@@ -592,6 +592,7 @@ module Account_update_body_components = struct
        , 'bool
        , 'protocol_state_precondition
        , 'account_precondition
+       , 'permissions_precondition
        , 'valid_while_precondition
        , 'may_use_token
        , 'authorization_kind )
@@ -607,6 +608,7 @@ module Account_update_body_components = struct
     ; call_depth : 'int
     ; protocol_state_precondition : 'protocol_state_precondition
     ; account_precondition : 'account_precondition
+    ; permissions_precondition : 'permissions_precondition
     ; valid_while_precondition : 'valid_while_precondition
     ; use_full_commitment : 'bool
     ; may_use_token : 'may_use_token
@@ -642,7 +644,7 @@ module Account_update_body_components = struct
     ; preconditions =
         { Account_update.Preconditions.network = t.protocol_state_precondition
         ; account = t.account_precondition
-        ; test = t.account_precondition
+        ; permissions = t.permissions_precondition
         ; valid_while = t.valid_while_precondition
         }
     ; use_full_commitment = t.use_full_commitment
@@ -677,7 +679,7 @@ let gen_account_update_body_components (type a b c d) ?global_slot
        first_use_of_account:bool -> Account.t -> d Quickcheck.Generator.t )
     ~(f_account_update_account_precondition :
        d -> Account_update.Account_precondition.t ) ~authorization_tag () :
-    (_, _, _, a, _, _, _, b, _, d, _, _, _) Account_update_body_components.t
+    (_, _, _, a, _, _, _, b, _, d, _, _, _, _) Account_update_body_components.t
     Quickcheck.Generator.t =
   let open Quickcheck.Let_syntax in
   (* fee payers have to be in the ledger *)
@@ -833,6 +835,7 @@ let gen_account_update_body_components (type a b c d) ?global_slot
   let%bind account_precondition =
     f_account_precondition ~first_use_of_account account
   in
+  let%bind permissions_precondition = Account_update.Permissions_precondition.gen in
   (* update the depth when generating `account_updates` in Zkapp_command.t *)
   let call_depth = 0 in
   let%bind use_full_commitment =
@@ -1011,6 +1014,7 @@ let gen_account_update_body_components (type a b c d) ?global_slot
   ; call_depth
   ; protocol_state_precondition
   ; account_precondition
+  ; permissions_precondition
   ; valid_while_precondition
   ; use_full_commitment
   ; may_use_token

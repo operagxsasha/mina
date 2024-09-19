@@ -2040,13 +2040,7 @@ let%test_module _ =
                      else sender_nonce
                    in
                    Zkapp_precondition.Account.nonce nonce )
-              ; test =
-                  (let nonce =
-                     if Option.is_none fee_payer then
-                       Account.Nonce.succ sender_nonce
-                     else sender_nonce
-                   in
-                   Zkapp_precondition.Account.nonce nonce )
+              ; permissions = Zkapp_precondition.Permissions.accept
               ; valid_while = Ignore
               }
         }
@@ -2909,7 +2903,7 @@ let%test_module _ =
             Account_update.Preconditions.
               { network = Zkapp_precondition.Protocol_state.accept
               ; account = Zkapp_precondition.Account.accept
-              ; test = Zkapp_precondition.Account.accept
+              ; permissions = Zkapp_precondition.Permissions.accept
               ; valid_while = Ignore
               }
       in

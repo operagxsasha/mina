@@ -79,7 +79,7 @@ end
 module Permissions = struct
   module V2 = struct
     type t =
-      { dummy_bool : bool Mina_base_zkapp_basic.Or_ignore.V1.t
+      { receive : Mina_base_permissions.Auth_required.V2.t Mina_base_zkapp_basic.Or_ignore.V1.t
       }
   end
 end

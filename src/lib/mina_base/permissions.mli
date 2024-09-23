@@ -30,6 +30,8 @@ module Auth_required : sig
   module Checked : sig
     type t
 
+    val equal : t -> t -> Boolean.var Snark_params.Tick.Checked.t
+
     val if_ : Boolean.var -> then_:t -> else_:t -> t
 
     val to_input : t -> Field.Var.t Random_oracle_input.Chunked.t

@@ -1031,9 +1031,10 @@ module Permissions_precondition = struct
     Quickcheck.Generator.variant2
       Quickcheck.Generator.bool
       Quickcheck.Generator.bool (* TODO this should be unit? or maybe there's just a cleaner way to write this*)
-      |> Quickcheck.Generator.map ~f:(function
-         | `A b -> Zkapp_precondition.Permissions.from_bool b
-         | `B _ -> Zkapp_precondition.Permissions.accept
+      |> Quickcheck.Generator.map ~f:Zkapp_precondition.Permissions.(function
+          (* TODO Real generator here *)
+         | `A _b -> from_auth Permissions.Auth_required.None
+         | `B _ -> accept
       )
 
   module Tag = struct

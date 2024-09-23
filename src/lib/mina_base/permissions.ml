@@ -240,16 +240,27 @@ module Auth_required = struct
     List.iter [ Impossible; Proof; Signature; Either ] ~f:(fun t ->
         [%test_eq: t] t (decode (encode t)) )
 
+
+
   module Checked = struct
     type t = Boolean.var Encoding.t
 
     let if_ = Encoding.if_
+
+    let equal (a : t) (b : t) : Boolean.var Checked.t =
+      let open Checked.Let_syntax in Boolean.(
+      let%bind signature_necessary_equal = equal (Encoding.signature_necessary a) (Encoding.signature_necessary b) in
+      let%bind signature_sufficient_equal = equal (Encoding.signature_sufficient a) (Encoding.signature_sufficient b) in
+      signature_necessary_equal && signature_sufficient_equal
+      )
+
 
     let to_input : t -> _ =
       Encoding.to_input ~field_of_bool:(fun (b : Boolean.var) ->
           (b :> Field.Var.t) )
 
     let constant t = Encoding.map (encode t) ~f:Boolean.var_of_value
+
 
     let eval_no_proof
         ({ constant; signature_necessary = _; signature_sufficient } : t)
@@ -300,6 +311,7 @@ module Auth_required = struct
         Pickles.Impls.Step.Boolean.(not signature_sufficient)
         ~then_:(constant Signature) ~else_:t
   end
+
 
   let typ =
     let t =

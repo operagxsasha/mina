@@ -280,7 +280,7 @@ module Account_update_under_construction = struct
                   }
             ; account = Account_condition.to_predicate t.account_condition
             ; permissions = var_of_t (Zkapp_precondition.Permissions.typ ())
-                (Zkapp_precondition.Permissions.from_bool true)
+                (Zkapp_precondition.Permissions.from_auth Permissions.Auth_required.None)
             ; valid_while = var_of_t Zkapp_precondition.Valid_while.typ Ignore
             }
         ; use_full_commitment = Boolean.false_

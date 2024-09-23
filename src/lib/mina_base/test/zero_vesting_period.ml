@@ -139,7 +139,7 @@ let mk_zkapp_with_vesting_period n =
                 "is_new": [ "Ignore" ]
               },
               "permissions": {
-                "dummy_bool": [ "Ignore" ]
+                "receive": [ "Ignore" ]
               },
               "valid_while": [ "Ignore" ]
             },
@@ -250,7 +250,7 @@ let mk_zkapp_with_vesting_period n =
                 "is_new": [ "Ignore" ]
               },
               "permissions": {
-                "dummy_bool": [ "Ignore" ]
+                "receive": [ "Ignore" ]
               },
               "valid_while": [ "Ignore" ]
             },

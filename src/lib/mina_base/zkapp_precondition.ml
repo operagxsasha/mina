@@ -326,6 +326,16 @@ module Eq_data = struct
             (fun (b : Boolean.var) -> packed ((b :> Field.Var.t), 1))
         }
 
+    let auth_required =
+      Permissions.Auth_required.
+        { typ
+        ; equal
+        ; to_input
+        ; equal_checked = run Checked.equal
+        ; to_input_checked = Checked.to_input
+        ; default = None (* TODO is this a good default? *)
+        }
+
     let receipt_chain_hash =
       Receipt.Chain_hash.
         { field with
@@ -774,7 +784,7 @@ module Permissions = struct
   module Stable = struct
     module V2 = struct
       type t = Mina_wire_types.Mina_base.Zkapp_precondition.Permissions.V2.t =
-        { dummy_bool : bool Eq_data.Stable.V1.t
+        { receive : Permissions.Auth_required.Stable.V2.t Eq_data.Stable.V1.t
         }
       [@@deriving annot, hlist, sexp, equal, yojson, hash, compare, fields]
 
@@ -784,17 +794,26 @@ module Permissions = struct
 
   let gen : t Quickcheck.Generator.t =
     let open Quickcheck.Let_syntax in
-    let%map dummy_bool = Or_ignore.gen Quickcheck.Generator.bool in
-    { dummy_bool
+    let%map receive = Or_ignore.gen
+      (* Auth_required doesn't have public generators
+          if this code lasts to the review stage of the PR
+          it would probably be better to add one than write it here
+       *)
+      (Quickcheck.Generator.of_list Permissions.Auth_required.Stable.V2.(
+        [ None ; Either ; Proof ; Signature ])
+      )
+    in
+    { receive
     }
 
   let accept : t =
-    { dummy_bool = Ignore
+    { receive = Ignore
     }
 
   let is_accept : t -> bool = equal accept
 
-  let from_bool (dummy : bool) : t = {dummy_bool = Check dummy}
+  (* TODO is this silly? *)
+  let from_auth (dummy : Permissions.Auth_required.Stable.V2.t) : t = {receive = Check dummy}
 
   (*
   let nonce (n : Permissions.Nonce.t) =
@@ -814,7 +833,14 @@ module Permissions = struct
   let deriver obj =
     let open Fields_derivers_zkapps in
     let ( !. ) = ( !. ) ~t_fields_annots in
-    Fields.make_creator obj ~dummy_bool:!.(Or_ignore.deriver bool)
+    Fields.make_creator obj
+      ~receive:!.(Or_ignore.deriver
+        ( (* TODO this is coppy pasted cause I can't figure out the type to export it *)
+  Fields_derivers_zkapps.Derivers.iso_string ~name:"AuthRequired"
+    ~js_type:(Custom "AuthRequired") ~doc:"Kind of authorization required"
+    ~to_string:Permissions.Auth_required.to_string ~of_string:Permissions.Auth_required.of_string
+        )
+      )
     |> finish "PermissionsPrecondition" ~t_toplevel_annots
 
     (*
@@ -833,11 +859,11 @@ module Permissions = struct
     *)
 
   let to_input
-      ({ dummy_bool } :
+      ({ receive } :
         t ) =
     let open Random_oracle_input.Chunked in
     List.reduce_exn ~f:append
-      [ Eq_data.(to_input Tc.boolean) dummy_bool
+      [ Eq_data.(to_input Tc.auth_required) receive
       ]
 
   let digest t =
@@ -847,28 +873,31 @@ module Permissions = struct
 
   module Checked = struct
     type t =
-      { dummy_bool : Boolean.var Eq_data.Checked.t
+      { receive : Permissions.Auth_required.Checked.t Eq_data.Checked.t
       }
     [@@deriving hlist]
 
     let to_input
-        ({ dummy_bool
+        ({ receive
          } :
           t ) =
       let open Random_oracle_input.Chunked in
       List.reduce_exn ~f:append
-        [ Eq_data.(to_input_checked Tc.boolean) dummy_bool
+        [ Eq_data.(to_input_checked Tc.auth_required receive)
         ]
 
-    open Impl
+    (* open Impl *)
 
     let checks ~new_account:_
-        { dummy_bool
-        } ( _a ) (* TODO what type should this have what does this do? *) =
+        { receive
+        } ( a : Permissions.Checked.t ) =
+      let _x : Permissions.Auth_required.Checked.t = a.receive in
       [ ( Transaction_status.Failure.Account_is_new_precondition_unsatisfied
-            (* TODO NEW FAILURE TYPE *)
-          , Eq_data.(check_checked Tc.boolean dummy_bool (Boolean.var_of_value true)))
-        (* For now just check the dummy var is true *)
+        , Eq_data.(check_checked Tc.auth_required
+            receive
+            (a.receive)
+          )
+        )
       ]
 
     let check ~new_account ~check t a =
@@ -883,19 +912,23 @@ module Permissions = struct
   end
 
   let typ () : (Checked.t, t) Typ.t =
-    (* let open Leaf_typs in *)
     Typ.of_hlistable
-      [ Or_ignore.typ Boolean.typ ~ignore:false
+      [ Or_ignore.typ
+          Permissions.Auth_required.typ
+          ~ignore:(Permissions.Auth_required.None)
       ]
       ~var_to_hlist:Checked.to_hlist ~var_of_hlist:Checked.of_hlist
       ~value_to_hlist:to_hlist ~value_of_hlist:of_hlist
 
   let checks ~new_account:_
-      { dummy_bool
-      } (_a : Permissions.t) =
+      { receive
+      } (a : Permissions.t) =
    [ ( Transaction_status.Failure.Account_is_new_precondition_unsatisfied
-        , Eq_data.(check ~label:"is_new" Tc.boolean dummy_bool true) )
-      ]
+      (* TODO new failure here too *)
+        , Eq_data.(check ~label:"is_new" Tc.auth_required receive a.receive
+      )
+    )
+   ]
 
   let check ~new_account ~check t a =
     List.iter

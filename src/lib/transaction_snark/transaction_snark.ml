@@ -1796,6 +1796,16 @@ module Make_str (A : Wire_types.Concrete) = struct
               (protocol_state_predicate, global_state) ->
               Zkapp_precondition.Protocol_state.Checked.check
                 protocol_state_predicate global_state.protocol_state
+          | Check_permissions_precondition
+              ({ account_update; _ }, account,  local_state) ->
+              let local_state = ref local_state in
+              let check failure b =
+                local_state :=
+                  Inputs.Local_state.add_check !local_state failure b
+              in
+              Zkapp_precondition.Permissions.Checked.check ~check
+                account_update.data.preconditions.permissions account.data.permissions ;
+              !local_state
           | Check_account_precondition
               ({ account_update; _ }, account, new_account, local_state) ->
               let local_state = ref local_state in

@@ -888,7 +888,7 @@ module Permissions = struct
 
     (* open Impl *)
 
-    let checks ~new_account:_
+    let checks
         { receive
         } ( a : Permissions.Checked.t ) =
       let _x : Permissions.Auth_required.Checked.t = a.receive in
@@ -900,10 +900,10 @@ module Permissions = struct
         )
       ]
 
-    let check ~new_account ~check t a =
+    let check ~check t a =
       List.iter
         ~f:(fun (failure, passed) -> check failure passed)
-        (checks ~new_account t a)
+        (checks t a)
 
     let digest (t : t) =
       Random_oracle.Checked.(
@@ -920,7 +920,7 @@ module Permissions = struct
       ~var_to_hlist:Checked.to_hlist ~var_of_hlist:Checked.of_hlist
       ~value_to_hlist:to_hlist ~value_of_hlist:of_hlist
 
-  let checks ~new_account:_
+  let checks
       { receive
       } (a : Permissions.t) =
    [ ( Transaction_status.Failure.Account_is_new_precondition_unsatisfied
@@ -930,10 +930,10 @@ module Permissions = struct
     )
    ]
 
-  let check ~new_account ~check t a =
+  let check ~check t a =
     List.iter
       ~f:(fun (failure, res) -> check failure (Result.is_ok res))
-      (checks ~new_account t a)
+      (checks t a)
 end
 
 module Protocol_state = struct

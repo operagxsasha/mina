@@ -333,7 +333,40 @@ module Eq_data = struct
         ; to_input
         ; equal_checked = run Checked.equal
         ; to_input_checked = Checked.to_input
-        ; default = None (* TODO is this a good default? *)
+        ; default = None
+        }
+
+    let txn_version =
+      Mina_numbers.Txn_version.
+        { typ
+        ; equal
+        ; to_input
+        ; equal_checked = run Checked.equal
+        ; to_input_checked = Checked.to_input
+        ; default = of_int 0
+        }
+
+    let verification_key_auth =
+        { typ = Typ.tuple2 auth_required.typ txn_version.typ
+        ; equal =
+          (fun (l_auth,l_version) (r_auth,r_version) ->
+            (auth_required.equal l_auth r_auth) &&
+            (txn_version.equal l_version r_version))
+        ; to_input = (fun (auth,version) ->
+            Random_oracle.Input.Chunked.append
+            (auth_required.to_input auth)
+            (txn_version.to_input version))
+        ; equal_checked = run
+            (fun (l_auth,l_version) (r_auth,r_version) ->
+            let l = auth_required.equal_checked l_auth r_auth in
+            let r = txn_version.equal_checked l_version r_version in
+            Boolean.( l && r)
+            )
+        ; to_input_checked = (fun (auth,version) ->
+            Random_oracle.Input.Chunked.append
+            (auth_required.to_input_checked auth)
+            (txn_version.to_input_checked version))
+        ; default = (None , Unsigned.UInt32.of_int 0)
         }
 
     let receipt_chain_hash =
@@ -790,6 +823,10 @@ module Permissions = struct
         ; receive : Permissions.Auth_required.Stable.V2.t Eq_data.Stable.V1.t
         ; set_delegate : Permissions.Auth_required.Stable.V2.t Eq_data.Stable.V1.t
         ; set_permissions : Permissions.Auth_required.Stable.V2.t Eq_data.Stable.V1.t
+        ; set_verification_key :
+            (Permissions.Auth_required.Stable.V2.t
+            * Mina_numbers.Txn_version.Stable.V1.t)
+            Eq_data.Stable.V1.t
         ; set_zkapp_uri : Permissions.Auth_required.Stable.V2.t Eq_data.Stable.V1.t
         ; edit_action_state : Permissions.Auth_required.Stable.V2.t Eq_data.Stable.V1.t
         ; set_token_symbol : Permissions.Auth_required.Stable.V2.t Eq_data.Stable.V1.t
@@ -808,17 +845,20 @@ module Permissions = struct
           if this code lasts to the review stage of the PR
           it would probably be better to add one than write it here
        *)
-    let auth_required =
-      (Quickcheck.Generator.of_list Permissions.Auth_required.Stable.V2.(
-        [ None ; Either ; Proof ; Signature ])
-      )
-    in
+    let auth_required = Permissions.Auth_required.gen in
     let%bind edit_state = Or_ignore.gen auth_required in
     let%bind access = Or_ignore.gen auth_required in
     let%bind send = Or_ignore.gen auth_required in
     let%bind receive = Or_ignore.gen auth_required in
     let%bind set_delegate = Or_ignore.gen auth_required in
     let%bind set_permissions = Or_ignore.gen auth_required in
+    let%bind set_verification_key = Quickcheck.Generator.(
+        Or_ignore.gen(
+          tuple2
+          auth_required
+          (map ~f:(Unsigned.UInt32.of_int) small_positive_int)
+        )
+      ) in
     let%bind set_zkapp_uri = Or_ignore.gen auth_required in
     let%bind edit_action_state = Or_ignore.gen auth_required in
     let%bind set_token_symbol = Or_ignore.gen auth_required in
@@ -832,6 +872,7 @@ module Permissions = struct
     ; receive
     ; set_delegate
     ; set_permissions
+    ; set_verification_key
     ; set_zkapp_uri
     ; edit_action_state
     ; set_token_symbol
@@ -847,6 +888,7 @@ module Permissions = struct
     ; receive = Ignore
     ; set_delegate = Ignore
     ; set_permissions = Ignore
+    ; set_verification_key = Ignore
     ; set_zkapp_uri = Ignore
     ; edit_action_state = Ignore
     ; set_token_symbol = Ignore
@@ -888,6 +930,7 @@ module Permissions = struct
       ~receive:!.(Or_ignore.deriver auth_required)
       ~set_delegate:!.(Or_ignore.deriver auth_required)
       ~set_permissions:!.(Or_ignore.deriver auth_required)
+      ~set_verification_key:!.(Or_ignore.deriver Permissions.(iso_record ~to_record:Permissions.to_record ~of_record As_record.deriver))
       ~set_zkapp_uri:!.(Or_ignore.deriver auth_required)
       ~edit_action_state:!.(Or_ignore.deriver auth_required)
       ~set_token_symbol:!.(Or_ignore.deriver auth_required)
@@ -918,6 +961,7 @@ module Permissions = struct
        ; receive
        ; set_delegate
        ; set_permissions
+       ; set_verification_key
        ; set_zkapp_uri
        ; edit_action_state
        ; set_token_symbol
@@ -934,6 +978,7 @@ module Permissions = struct
       ; Eq_data.(to_input Tc.auth_required) receive
       ; Eq_data.(to_input Tc.auth_required) set_delegate
       ; Eq_data.(to_input Tc.auth_required) set_permissions
+      ; Eq_data.(to_input Tc.verification_key_auth) set_verification_key
       ; Eq_data.(to_input Tc.auth_required) set_zkapp_uri
       ; Eq_data.(to_input Tc.auth_required) edit_action_state
       ; Eq_data.(to_input Tc.auth_required) set_token_symbol
@@ -955,6 +1000,9 @@ module Permissions = struct
       ; receive : Permissions.Auth_required.Checked.t Eq_data.Checked.t
       ; set_delegate : Permissions.Auth_required.Checked.t Eq_data.Checked.t
       ; set_permissions : Permissions.Auth_required.Checked.t Eq_data.Checked.t
+      ; set_verification_key :
+        (Permissions.Auth_required.Checked.t * Mina_numbers.Txn_version.Checked.var)
+        Eq_data.Checked.t
       ; set_zkapp_uri : Permissions.Auth_required.Checked.t Eq_data.Checked.t
       ; edit_action_state : Permissions.Auth_required.Checked.t Eq_data.Checked.t
       ; set_token_symbol : Permissions.Auth_required.Checked.t Eq_data.Checked.t
@@ -971,6 +1019,7 @@ module Permissions = struct
          ; receive
          ; set_delegate
          ; set_permissions
+         ; set_verification_key
          ; set_zkapp_uri
          ; edit_action_state
          ; set_token_symbol
@@ -987,6 +1036,7 @@ module Permissions = struct
         ; Eq_data.(to_input_checked Tc.auth_required receive)
         ; Eq_data.(to_input_checked Tc.auth_required set_delegate)
         ; Eq_data.(to_input_checked Tc.auth_required set_permissions)
+        ; Eq_data.(to_input_checked Tc.verification_key_auth set_verification_key)
         ; Eq_data.(to_input_checked Tc.auth_required set_zkapp_uri)
         ; Eq_data.(to_input_checked Tc.auth_required edit_action_state)
         ; Eq_data.(to_input_checked Tc.auth_required set_token_symbol)
@@ -1002,6 +1052,7 @@ module Permissions = struct
         ; receive
         ; set_delegate
         ; set_permissions
+        ; set_verification_key
         ; set_zkapp_uri
         ; edit_action_state
         ; set_token_symbol
@@ -1022,6 +1073,8 @@ module Permissions = struct
         , Eq_data.(check_checked Tc.auth_required set_delegate (a.set_delegate)))
       ; ( Transaction_status.Failure.Permissions_precondition_unsatisfied
         , Eq_data.(check_checked Tc.auth_required set_permissions (a.set_permissions)))
+      ; ( Transaction_status.Failure.Permissions_precondition_unsatisfied
+        , Eq_data.(check_checked Tc.verification_key_auth set_verification_key (a.set_verification_key)))
       ; ( Transaction_status.Failure.Permissions_precondition_unsatisfied
         , Eq_data.(check_checked Tc.auth_required set_zkapp_uri (a.set_zkapp_uri)))
       ; ( Transaction_status.Failure.Permissions_precondition_unsatisfied
@@ -1068,6 +1121,9 @@ module Permissions = struct
           Permissions.Auth_required.typ
           ~ignore:(Permissions.Auth_required.None)
       ; Or_ignore.typ
+          (Typ.tuple2 Permissions.Auth_required.typ Mina_numbers.Txn_version.typ)
+          ~ignore:(Permissions.Auth_required.None, Unsigned.UInt32.of_int 0)
+      ; Or_ignore.typ
           Permissions.Auth_required.typ
           ~ignore:(Permissions.Auth_required.None)
       ; Or_ignore.typ
@@ -1096,6 +1152,7 @@ module Permissions = struct
       ; access
       ; set_delegate
       ; set_permissions
+      ; set_verification_key
       ; set_zkapp_uri
       ; edit_action_state
       ; set_token_symbol
@@ -1116,6 +1173,9 @@ module Permissions = struct
         , Eq_data.(check ~label:"set_delegate" Tc.auth_required set_delegate a.set_delegate))
    ; ( Transaction_status.Failure.Permissions_precondition_unsatisfied
         , Eq_data.(check ~label:"set_permissions" Tc.auth_required set_permissions a.set_permissions))
+   ; ( Transaction_status.Failure.Permissions_precondition_unsatisfied
+        , Eq_data.(check ~label:"set_verification_key"
+          Tc.verification_key_auth set_verification_key a.set_verification_key))
    ; ( Transaction_status.Failure.Permissions_precondition_unsatisfied
         , Eq_data.(check ~label:"set_zkapp_uri" Tc.auth_required set_zkapp_uri a.set_zkapp_uri))
    ; ( Transaction_status.Failure.Permissions_precondition_unsatisfied

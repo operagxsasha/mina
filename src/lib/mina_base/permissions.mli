@@ -27,6 +27,8 @@ module Auth_required : sig
 
   val verification_key_perm_fallback_to_signature_with_older_version : t -> t
 
+  val gen : t Quickcheck.Generator.t
+
   module Checked : sig
     type t
 
@@ -143,3 +145,4 @@ val deriver :
       as
       'a )
   -> 'a
+

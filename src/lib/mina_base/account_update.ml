@@ -1024,18 +1024,7 @@ module Permissions_precondition = struct
 
   [%%define_locally Stable.Latest.(equal, compare)]
 
-  let gen : t Quickcheck.Generator.t =
-    (* we used to have 3 constructors, Full, Nonce, and Accept for the type t
-       nowadays, the generator creates these 3 different kinds of values, but all mapped to t
-    *)
-    Quickcheck.Generator.variant2
-      Quickcheck.Generator.bool
-      Quickcheck.Generator.bool (* TODO this should be unit? or maybe there's just a cleaner way to write this*)
-      |> Quickcheck.Generator.map ~f:Zkapp_precondition.Permissions.(function
-          (* TODO Real generator here *)
-         | `A _b -> from_auth Permissions.Auth_required.None
-         | `B _ -> accept
-      )
+  let gen : t Quickcheck.Generator.t = Zkapp_precondition.Permissions.gen
 
   module Tag = struct
     type t = Full | Nonce | Accept [@@deriving equal, compare, sexp, yojson]

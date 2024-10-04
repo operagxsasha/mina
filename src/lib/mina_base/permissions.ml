@@ -72,6 +72,9 @@ module Auth_required = struct
     | t ->
         t
 
+  let gen : t Quickcheck.Generator.t =
+    Quickcheck.Generator.of_list [ None ; Either ; Proof; Signature ]
+
   (* permissions such that [check permission (Proof _)] is true *)
   let gen_for_proof_authorization : t Quickcheck.Generator.t =
     Quickcheck.Generator.of_list [ None; Either; Proof ]
@@ -109,6 +112,7 @@ module Auth_required = struct
         Impossible
     | _ ->
         failwith "auth_required_of_string: unknown variant"
+
 
   (* The encoding is chosen so that it is easy to write this function
 
@@ -345,6 +349,12 @@ module Auth_required = struct
     | (Proof | Signature | Either), None_given ->
         false
 end
+
+
+let auth_required =
+  Fields_derivers_zkapps.Derivers.iso_string ~name:"AuthRequired"
+    ~js_type:(Custom "AuthRequired") ~doc:"Kind of authorization required"
+    ~to_string:Auth_required.to_string ~of_string:Auth_required.of_string
 
 module Poly = struct
   [%%versioned
@@ -601,12 +611,6 @@ let empty : t =
   ; set_timing = None
   }
 
-(* deriving-fields-related stuff *)
-
-let auth_required =
-  Fields_derivers_zkapps.Derivers.iso_string ~name:"AuthRequired"
-    ~js_type:(Custom "AuthRequired") ~doc:"Kind of authorization required"
-    ~to_string:Auth_required.to_string ~of_string:Auth_required.of_string
 
 module As_record = struct
   type t = { auth : Auth_required.t; txn_version : Mina_numbers.Txn_version.t }

@@ -350,7 +350,6 @@ module Auth_required = struct
         false
 end
 
-
 let auth_required =
   Fields_derivers_zkapps.Derivers.iso_string ~name:"AuthRequired"
     ~js_type:(Custom "AuthRequired") ~doc:"Kind of authorization required"

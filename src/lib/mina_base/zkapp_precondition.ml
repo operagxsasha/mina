@@ -346,29 +346,6 @@ module Eq_data = struct
         ; default = of_int 0
         }
 
-    let verification_key_auth =
-        { typ = Typ.tuple2 auth_required.typ txn_version.typ
-        ; equal =
-          (fun (l_auth,l_version) (r_auth,r_version) ->
-            (auth_required.equal l_auth r_auth) &&
-            (txn_version.equal l_version r_version))
-        ; to_input = (fun (auth,version) ->
-            Random_oracle.Input.Chunked.append
-            (auth_required.to_input auth)
-            (txn_version.to_input version))
-        ; equal_checked = run
-            (fun (l_auth,l_version) (r_auth,r_version) ->
-            let l = auth_required.equal_checked l_auth r_auth in
-            let r = txn_version.equal_checked l_version r_version in
-            Boolean.( l && r)
-            )
-        ; to_input_checked = (fun (auth,version) ->
-            Random_oracle.Input.Chunked.append
-            (auth_required.to_input_checked auth)
-            (txn_version.to_input_checked version))
-        ; default = (None , Unsigned.UInt32.of_int 0)
-        }
-
     let receipt_chain_hash =
       Receipt.Chain_hash.
         { field with
@@ -824,9 +801,8 @@ module Permissions = struct
         ; set_delegate : Permissions.Auth_required.Stable.V2.t Eq_data.Stable.V1.t
         ; set_permissions : Permissions.Auth_required.Stable.V2.t Eq_data.Stable.V1.t
         ; set_verification_key :
-            (Permissions.Auth_required.Stable.V2.t
-            * Mina_numbers.Txn_version.Stable.V1.t)
-            Eq_data.Stable.V1.t
+            (Permissions.Auth_required.Stable.V2.t Eq_data.Stable.V1.t
+            * Mina_numbers.Txn_version.Stable.V1.t Eq_data.Stable.V1.t)
         ; set_zkapp_uri : Permissions.Auth_required.Stable.V2.t Eq_data.Stable.V1.t
         ; edit_action_state : Permissions.Auth_required.Stable.V2.t Eq_data.Stable.V1.t
         ; set_token_symbol : Permissions.Auth_required.Stable.V2.t Eq_data.Stable.V1.t
@@ -853,11 +829,9 @@ module Permissions = struct
     let%bind set_delegate = Or_ignore.gen auth_required in
     let%bind set_permissions = Or_ignore.gen auth_required in
     let%bind set_verification_key = Quickcheck.Generator.(
-        Or_ignore.gen(
           tuple2
-          auth_required
-          (map ~f:(Unsigned.UInt32.of_int) small_positive_int)
-        )
+          (Or_ignore.gen auth_required)
+          (Or_ignore.gen (map ~f:(Unsigned.UInt32.of_int) small_positive_int))
       ) in
     let%bind set_zkapp_uri = Or_ignore.gen auth_required in
     let%bind edit_action_state = Or_ignore.gen auth_required in
@@ -888,7 +862,7 @@ module Permissions = struct
     ; receive = Ignore
     ; set_delegate = Ignore
     ; set_permissions = Ignore
-    ; set_verification_key = Ignore
+    ; set_verification_key = (Ignore,Ignore)
     ; set_zkapp_uri = Ignore
     ; edit_action_state = Ignore
     ; set_token_symbol = Ignore
@@ -914,15 +888,46 @@ module Permissions = struct
         && is_accept { t with nonce = Ignore }
   *)
 
+  (* sligtly modified from Permissions.As_record to allow the Or_ignore *)
+
+  module As_record = struct
+    type t =
+      { auth : Permissions.Auth_required.t Or_ignore.t
+      ; txn_version : Mina_numbers.Txn_version.t Or_ignore.t
+      }
+    [@@deriving fields, annot]
+
+    let deriver obj =
+      (* TODO I can't figure out the type to export this from Permissions *)
+      let auth_required =
+          Fields_derivers_zkapps.Derivers.iso_string ~name:"AuthRequired"
+            ~js_type:(Custom "AuthRequired") ~doc:"Kind of authorization required"
+            ~to_string:Permissions.Auth_required.to_string ~of_string:Permissions.Auth_required.of_string
+      in
+      let open Fields_derivers_zkapps.Derivers in
+      let ( !. ) = ( !. ) ~t_fields_annots in
+      let transaction_version =
+        needs_custom_js ~js_type:uint32 ~name:"TransactionVersion" uint32
+      in
+      Fields.make_creator obj ~auth:!.(Or_ignore.deriver auth_required)
+        ~txn_version:!.(Or_ignore.deriver transaction_version)
+      |> finish "VerificationKeyPermission" ~t_toplevel_annots
+
+
+    let to_record (auth, txn_version) = { auth; txn_version }
+
+    let of_record { auth; txn_version } = (auth, txn_version)
+  end
+
   let deriver obj =
     let open Fields_derivers_zkapps in
-    let ( !. ) = ( !. ) ~t_fields_annots in
-    (* TODO I can't figure out the type to export this from Permissions *)
+    (* TODO repeated here because the module doesn't compile when it's exposed *)
     let auth_required =
         Fields_derivers_zkapps.Derivers.iso_string ~name:"AuthRequired"
           ~js_type:(Custom "AuthRequired") ~doc:"Kind of authorization required"
           ~to_string:Permissions.Auth_required.to_string ~of_string:Permissions.Auth_required.of_string
     in
+    let ( !. ) = ( !. ) ~t_fields_annots in
     Fields.make_creator obj
       ~edit_state:!.(Or_ignore.deriver auth_required)
       ~access:!.(Or_ignore.deriver auth_required)
@@ -930,7 +935,7 @@ module Permissions = struct
       ~receive:!.(Or_ignore.deriver auth_required)
       ~set_delegate:!.(Or_ignore.deriver auth_required)
       ~set_permissions:!.(Or_ignore.deriver auth_required)
-      ~set_verification_key:!.(Or_ignore.deriver Permissions.(iso_record ~to_record:Permissions.to_record ~of_record As_record.deriver))
+      ~set_verification_key:!.(As_record.(iso_record ~to_record ~of_record deriver))
       ~set_zkapp_uri:!.(Or_ignore.deriver auth_required)
       ~edit_action_state:!.(Or_ignore.deriver auth_required)
       ~set_token_symbol:!.(Or_ignore.deriver auth_required)
@@ -961,7 +966,7 @@ module Permissions = struct
        ; receive
        ; set_delegate
        ; set_permissions
-       ; set_verification_key
+       ; set_verification_key = (verification_key_auth,txn_version)
        ; set_zkapp_uri
        ; edit_action_state
        ; set_token_symbol
@@ -978,7 +983,8 @@ module Permissions = struct
       ; Eq_data.(to_input Tc.auth_required) receive
       ; Eq_data.(to_input Tc.auth_required) set_delegate
       ; Eq_data.(to_input Tc.auth_required) set_permissions
-      ; Eq_data.(to_input Tc.verification_key_auth) set_verification_key
+      ; Eq_data.(to_input Tc.auth_required) verification_key_auth
+      ; Eq_data.(to_input Tc.txn_version) txn_version
       ; Eq_data.(to_input Tc.auth_required) set_zkapp_uri
       ; Eq_data.(to_input Tc.auth_required) edit_action_state
       ; Eq_data.(to_input Tc.auth_required) set_token_symbol
@@ -1001,8 +1007,8 @@ module Permissions = struct
       ; set_delegate : Permissions.Auth_required.Checked.t Eq_data.Checked.t
       ; set_permissions : Permissions.Auth_required.Checked.t Eq_data.Checked.t
       ; set_verification_key :
-        (Permissions.Auth_required.Checked.t * Mina_numbers.Txn_version.Checked.var)
-        Eq_data.Checked.t
+        (Permissions.Auth_required.Checked.t Eq_data.Checked.t
+        * Mina_numbers.Txn_version.Checked.var Eq_data.Checked.t)
       ; set_zkapp_uri : Permissions.Auth_required.Checked.t Eq_data.Checked.t
       ; edit_action_state : Permissions.Auth_required.Checked.t Eq_data.Checked.t
       ; set_token_symbol : Permissions.Auth_required.Checked.t Eq_data.Checked.t
@@ -1019,7 +1025,7 @@ module Permissions = struct
          ; receive
          ; set_delegate
          ; set_permissions
-         ; set_verification_key
+         ; set_verification_key = (verification_key_auth,txn_version)
          ; set_zkapp_uri
          ; edit_action_state
          ; set_token_symbol
@@ -1036,7 +1042,8 @@ module Permissions = struct
         ; Eq_data.(to_input_checked Tc.auth_required receive)
         ; Eq_data.(to_input_checked Tc.auth_required set_delegate)
         ; Eq_data.(to_input_checked Tc.auth_required set_permissions)
-        ; Eq_data.(to_input_checked Tc.verification_key_auth set_verification_key)
+        ; Eq_data.(to_input_checked Tc.auth_required verification_key_auth)
+        ; Eq_data.(to_input_checked Tc.txn_version txn_version)
         ; Eq_data.(to_input_checked Tc.auth_required set_zkapp_uri)
         ; Eq_data.(to_input_checked Tc.auth_required edit_action_state)
         ; Eq_data.(to_input_checked Tc.auth_required set_token_symbol)
@@ -1052,7 +1059,7 @@ module Permissions = struct
         ; receive
         ; set_delegate
         ; set_permissions
-        ; set_verification_key
+        ; set_verification_key = (verification_key_auth,txn_version)
         ; set_zkapp_uri
         ; edit_action_state
         ; set_token_symbol
@@ -1074,7 +1081,9 @@ module Permissions = struct
       ; ( Transaction_status.Failure.Permissions_precondition_unsatisfied
         , Eq_data.(check_checked Tc.auth_required set_permissions (a.set_permissions)))
       ; ( Transaction_status.Failure.Permissions_precondition_unsatisfied
-        , Eq_data.(check_checked Tc.verification_key_auth set_verification_key (a.set_verification_key)))
+        , Eq_data.(check_checked Tc.auth_required verification_key_auth (fst a.set_verification_key)))
+      ; ( Transaction_status.Failure.Permissions_precondition_unsatisfied
+        , Eq_data.(check_checked Tc.txn_version txn_version (snd a.set_verification_key)))
       ; ( Transaction_status.Failure.Permissions_precondition_unsatisfied
         , Eq_data.(check_checked Tc.auth_required set_zkapp_uri (a.set_zkapp_uri)))
       ; ( Transaction_status.Failure.Permissions_precondition_unsatisfied
@@ -1120,9 +1129,11 @@ module Permissions = struct
       ; Or_ignore.typ
           Permissions.Auth_required.typ
           ~ignore:(Permissions.Auth_required.None)
-      ; Or_ignore.typ
-          (Typ.tuple2 Permissions.Auth_required.typ Mina_numbers.Txn_version.typ)
-          ~ignore:(Permissions.Auth_required.None, Unsigned.UInt32.of_int 0)
+      ; Typ.tuple2
+          (Or_ignore.typ Permissions.Auth_required.typ
+          ~ignore:Permissions.Auth_required.None)
+          (Or_ignore.typ  Mina_numbers.Txn_version.typ
+          ~ignore:(Unsigned.UInt32.of_int 0))
       ; Or_ignore.typ
           Permissions.Auth_required.typ
           ~ignore:(Permissions.Auth_required.None)
@@ -1152,7 +1163,7 @@ module Permissions = struct
       ; access
       ; set_delegate
       ; set_permissions
-      ; set_verification_key
+      ; set_verification_key = (verification_key_auth,txn_version)
       ; set_zkapp_uri
       ; edit_action_state
       ; set_token_symbol
@@ -1174,8 +1185,11 @@ module Permissions = struct
    ; ( Transaction_status.Failure.Permissions_precondition_unsatisfied
         , Eq_data.(check ~label:"set_permissions" Tc.auth_required set_permissions a.set_permissions))
    ; ( Transaction_status.Failure.Permissions_precondition_unsatisfied
-        , Eq_data.(check ~label:"set_verification_key"
-          Tc.verification_key_auth set_verification_key a.set_verification_key))
+        , Eq_data.(check ~label:"set_verification_key_auth"
+          Tc.auth_required verification_key_auth (fst a.set_verification_key)))
+   ; ( Transaction_status.Failure.Permissions_precondition_unsatisfied
+        , Eq_data.(check ~label:"set_verification_key_txn_version"
+          Tc.txn_version txn_version (snd a.set_verification_key)))
    ; ( Transaction_status.Failure.Permissions_precondition_unsatisfied
         , Eq_data.(check ~label:"set_zkapp_uri" Tc.auth_required set_zkapp_uri a.set_zkapp_uri))
    ; ( Transaction_status.Failure.Permissions_precondition_unsatisfied

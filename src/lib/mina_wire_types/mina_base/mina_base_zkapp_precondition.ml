@@ -86,9 +86,8 @@ module Permissions = struct
       ; set_delegate : Mina_base_permissions.Auth_required.V2.t Mina_base_zkapp_basic.Or_ignore.V1.t
       ; set_permissions : Mina_base_permissions.Auth_required.V2.t Mina_base_zkapp_basic.Or_ignore.V1.t
       ; set_verification_key :
-            (Mina_base_permissions.Auth_required.V2.t
-            * Mina_numbers.Txn_version.V1.t)
-            Mina_base_zkapp_basic.Or_ignore.V1.t
+            (Mina_base_permissions.Auth_required.V2.t Mina_base_zkapp_basic.Or_ignore.V1.t
+            * Mina_numbers.Txn_version.V1.t Mina_base_zkapp_basic.Or_ignore.V1.t)
       ; set_zkapp_uri : Mina_base_permissions.Auth_required.V2.t Mina_base_zkapp_basic.Or_ignore.V1.t
       ; edit_action_state : Mina_base_permissions.Auth_required.V2.t Mina_base_zkapp_basic.Or_ignore.V1.t
       ; set_token_symbol : Mina_base_permissions.Auth_required.V2.t Mina_base_zkapp_basic.Or_ignore.V1.t

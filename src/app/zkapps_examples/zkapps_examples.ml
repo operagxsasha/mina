@@ -74,11 +74,6 @@ module Account_update_under_construction = struct
             t
     end
 
-    module Permissions_condition = struct
-
-
-    end
-
     module Update = struct
       type t = { app_state : Field.t option Zkapp_state.V.t }
 
@@ -279,7 +274,8 @@ module Account_update_under_construction = struct
                       }
                   }
             ; account = Account_condition.to_predicate t.account_condition
-            ; permissions = var_of_t (Zkapp_precondition.Permissions.typ ())
+            ; permissions =
+                var_of_t (Zkapp_precondition.Permissions.typ ())
                 Zkapp_precondition.Permissions.accept
                 (* TODO this is probably wrong *)
             ; valid_while = var_of_t Zkapp_precondition.Valid_while.typ Ignore

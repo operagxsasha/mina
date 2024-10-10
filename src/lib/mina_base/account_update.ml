@@ -1050,14 +1050,10 @@ module Permissions_precondition = struct
             (pack_input x))
       in
       Zkapp_precondition.Permissions.Checked.to_input t |> digest
-
-    (* let nonce (t : t) = t.nonce *)
   end
 
   let typ () : (Zkapp_precondition.Permissions.Checked.t, t) Typ.t =
     Zkapp_precondition.Permissions.typ ()
-
-  (* let nonce ({ nonce; _ } : t) = nonce *)
 end
 
 module Preconditions = struct

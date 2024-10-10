@@ -691,7 +691,6 @@ module Eff = struct
              ; .. > )
            t
     | Check_permissions_precondition :
-        (* TODO what do I need in this type? *)
         'account_update
         * 'account
         * 'local_state

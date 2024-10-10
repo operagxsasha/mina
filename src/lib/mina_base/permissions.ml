@@ -113,7 +113,6 @@ module Auth_required = struct
     | _ ->
         failwith "auth_required_of_string: unknown variant"
 
-
   (* The encoding is chosen so that it is easy to write this function
 
       let spec_eval t ~signature_verifies =
@@ -244,8 +243,6 @@ module Auth_required = struct
     List.iter [ Impossible; Proof; Signature; Either ] ~f:(fun t ->
         [%test_eq: t] t (decode (encode t)) )
 
-
-
   module Checked = struct
     type t = Boolean.var Encoding.t
 
@@ -258,13 +255,11 @@ module Auth_required = struct
       signature_necessary_equal && signature_sufficient_equal
       )
 
-
     let to_input : t -> _ =
       Encoding.to_input ~field_of_bool:(fun (b : Boolean.var) ->
           (b :> Field.Var.t) )
 
     let constant t = Encoding.map (encode t) ~f:Boolean.var_of_value
-
 
     let eval_no_proof
         ({ constant; signature_necessary = _; signature_sufficient } : t)
@@ -316,7 +311,6 @@ module Auth_required = struct
         ~then_:(constant Signature) ~else_:t
   end
 
-
   let typ =
     let t =
       let open Encoding in
@@ -349,11 +343,6 @@ module Auth_required = struct
     | (Proof | Signature | Either), None_given ->
         false
 end
-
-let auth_required =
-  Fields_derivers_zkapps.Derivers.iso_string ~name:"AuthRequired"
-    ~js_type:(Custom "AuthRequired") ~doc:"Kind of authorization required"
-    ~to_string:Auth_required.to_string ~of_string:Auth_required.of_string
 
 module Poly = struct
   [%%versioned
@@ -610,6 +599,12 @@ let empty : t =
   ; set_timing = None
   }
 
+(* deriving-fields-related stuff *)
+
+let auth_required =
+  Fields_derivers_zkapps.Derivers.iso_string ~name:"AuthRequired"
+    ~js_type:(Custom "AuthRequired") ~doc:"Kind of authorization required"
+    ~to_string:Auth_required.to_string ~of_string:Auth_required.of_string
 
 module As_record = struct
   type t = { auth : Auth_required.t; txn_version : Mina_numbers.Txn_version.t }

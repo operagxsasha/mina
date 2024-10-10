@@ -788,27 +788,36 @@ module Permissions = struct
         ; access : Permissions.Auth_required.Stable.V2.t Eq_data.Stable.V1.t
         ; send : Permissions.Auth_required.Stable.V2.t Eq_data.Stable.V1.t
         ; receive : Permissions.Auth_required.Stable.V2.t Eq_data.Stable.V1.t
-        ; set_delegate : Permissions.Auth_required.Stable.V2.t Eq_data.Stable.V1.t
-        ; set_permissions : Permissions.Auth_required.Stable.V2.t Eq_data.Stable.V1.t
-        ; set_verification_key : Permissions.Auth_required.Stable.V2.t Eq_data.Stable.V1.t
-        ; set_zkapp_uri : Permissions.Auth_required.Stable.V2.t Eq_data.Stable.V1.t
-        ; edit_action_state : Permissions.Auth_required.Stable.V2.t Eq_data.Stable.V1.t
-        ; set_token_symbol : Permissions.Auth_required.Stable.V2.t Eq_data.Stable.V1.t
-        ; increment_nonce : Permissions.Auth_required.Stable.V2.t Eq_data.Stable.V1.t
-        ; set_voting_for : Permissions.Auth_required.Stable.V2.t Eq_data.Stable.V1.t
+        ; set_delegate :
+            Permissions.Auth_required.Stable.V2.t Eq_data.Stable.V1.t
+        ; set_permissions :
+            Permissions.Auth_required.Stable.V2.t Eq_data.Stable.V1.t
+        ; set_verification_key :
+            Permissions.Auth_required.Stable.V2.t Eq_data.Stable.V1.t
+        ; set_zkapp_uri :
+            Permissions.Auth_required.Stable.V2.t Eq_data.Stable.V1.t
+        ; edit_action_state :
+            Permissions.Auth_required.Stable.V2.t Eq_data.Stable.V1.t
+        ; set_token_symbol :
+            Permissions.Auth_required.Stable.V2.t Eq_data.Stable.V1.t
+        ; increment_nonce :
+            Permissions.Auth_required.Stable.V2.t Eq_data.Stable.V1.t
+        ; set_voting_for :
+            Permissions.Auth_required.Stable.V2.t Eq_data.Stable.V1.t
         ; set_timing : Permissions.Auth_required.Stable.V2.t Eq_data.Stable.V1.t
         }
       [@@deriving annot, hlist, sexp, equal, yojson, hash, compare, fields]
+
       let to_latest = Fn.id
     end
   end]
 
   let gen : t Quickcheck.Generator.t =
     let open Quickcheck.Let_syntax in
-      (* Auth_required doesn't have public generators
-          if this code lasts to the review stage of the PR
-          it would probably be better to add one than write it here
-       *)
+    (* Auth_required doesn't have public generators
+        if this code lasts to the review stage of the PR
+        it would probably be better to add one than write it here
+    *)
     let auth_required = Permissions.Auth_required.gen in
     let%bind edit_state = Or_ignore.gen auth_required in
     let%bind access = Or_ignore.gen auth_required in
@@ -824,20 +833,20 @@ module Permissions = struct
     let%bind set_voting_for = Or_ignore.gen auth_required in
     let%bind set_timing = Or_ignore.gen auth_required in
     return
-    { edit_state
-    ; access
-    ; send
-    ; receive
-    ; set_delegate
-    ; set_permissions
-    ; set_verification_key
-    ; set_zkapp_uri
-    ; edit_action_state
-    ; set_token_symbol
-    ; increment_nonce
-    ; set_voting_for
-    ; set_timing
-    }
+      { edit_state
+      ; access
+      ; send
+      ; receive
+      ; set_delegate
+      ; set_permissions
+      ; set_verification_key
+      ; set_zkapp_uri
+      ; edit_action_state
+      ; set_token_symbol
+      ; increment_nonce
+      ; set_voting_for
+      ; set_timing
+      }
 
   let accept : t =
     { edit_state = Ignore
@@ -876,9 +885,10 @@ module Permissions = struct
     let open Fields_derivers_zkapps in
     (* TODO coppied from Permissions because I can't get the type right to expose it *)
     let auth_required =
-        Fields_derivers_zkapps.Derivers.iso_string ~name:"AuthRequired"
-          ~js_type:(Custom "AuthRequired") ~doc:"Kind of authorization required"
-          ~to_string:Permissions.Auth_required.to_string ~of_string:Permissions.Auth_required.of_string
+      Fields_derivers_zkapps.Derivers.iso_string ~name:"AuthRequired"
+        ~js_type:(Custom "AuthRequired") ~doc:"Kind of authorization required"
+        ~to_string:Permissions.Auth_required.to_string
+        ~of_string:Permissions.Auth_required.of_string
     in
     let ( !. ) = ( !. ) ~t_fields_annots in
     Fields.make_creator obj
@@ -897,7 +907,7 @@ module Permissions = struct
       ~set_timing:!.(Or_ignore.deriver auth_required)
     |> finish "PermissionsPrecondition" ~t_toplevel_annots
 
-    (*
+  (*
   let%test_unit "json roundtrip" =
     let b = Balance.of_nanomina_int_exn 1000 in
     let predicate : t =
@@ -958,9 +968,11 @@ module Permissions = struct
       ; receive : Permissions.Auth_required.Checked.t Eq_data.Checked.t
       ; set_delegate : Permissions.Auth_required.Checked.t Eq_data.Checked.t
       ; set_permissions : Permissions.Auth_required.Checked.t Eq_data.Checked.t
-      ; set_verification_key : Permissions.Auth_required.Checked.t Eq_data.Checked.t
+      ; set_verification_key :
+          Permissions.Auth_required.Checked.t Eq_data.Checked.t
       ; set_zkapp_uri : Permissions.Auth_required.Checked.t Eq_data.Checked.t
-      ; edit_action_state : Permissions.Auth_required.Checked.t Eq_data.Checked.t
+      ; edit_action_state :
+          Permissions.Auth_required.Checked.t Eq_data.Checked.t
       ; set_token_symbol : Permissions.Auth_required.Checked.t Eq_data.Checked.t
       ; increment_nonce : Permissions.Auth_required.Checked.t Eq_data.Checked.t
       ; set_voting_for : Permissions.Auth_required.Checked.t Eq_data.Checked.t
@@ -1015,41 +1027,49 @@ module Permissions = struct
         ; increment_nonce
         ; set_voting_for
         ; set_timing
-        }
-      ( a : Permissions.Checked.t ) =
+        } (a : Permissions.Checked.t) =
       [ ( Transaction_status.Failure.Permissions_precondition_unsatisfied
-        , Eq_data.(check_checked Tc.auth_required edit_state (a.edit_state)))
+        , Eq_data.(check_checked Tc.auth_required edit_state a.edit_state) )
       ; ( Transaction_status.Failure.Permissions_precondition_unsatisfied
-        , Eq_data.(check_checked Tc.auth_required access (a.access)))
+        , Eq_data.(check_checked Tc.auth_required access a.access) )
       ; ( Transaction_status.Failure.Permissions_precondition_unsatisfied
-        , Eq_data.(check_checked Tc.auth_required send (a.send)))
+        , Eq_data.(check_checked Tc.auth_required send a.send) )
       ; ( Transaction_status.Failure.Permissions_precondition_unsatisfied
-        , Eq_data.(check_checked Tc.auth_required receive (a.receive)))
+        , Eq_data.(check_checked Tc.auth_required receive a.receive) )
       ; ( Transaction_status.Failure.Permissions_precondition_unsatisfied
-        , Eq_data.(check_checked Tc.auth_required set_delegate (a.set_delegate)))
+        , Eq_data.(check_checked Tc.auth_required set_delegate a.set_delegate)
+        )
       ; ( Transaction_status.Failure.Permissions_precondition_unsatisfied
-        , Eq_data.(check_checked Tc.auth_required set_permissions (a.set_permissions)))
+        , Eq_data.(
+            check_checked Tc.auth_required set_permissions a.set_permissions) )
       ; ( Transaction_status.Failure.Permissions_precondition_unsatisfied
-        , Eq_data.(check_checked Tc.auth_required set_verification_key (fst a.set_verification_key)))
-      (* TODO should we check that the txn version is current when this is not ignored? *)
+        , Eq_data.(
+            check_checked Tc.auth_required set_verification_key
+              (fst a.set_verification_key)) )
+        (* TODO should we check that the txn version is current when this is not ignored? *)
       ; ( Transaction_status.Failure.Permissions_precondition_unsatisfied
-        , Eq_data.(check_checked Tc.auth_required set_zkapp_uri (a.set_zkapp_uri)))
+        , Eq_data.(check_checked Tc.auth_required set_zkapp_uri a.set_zkapp_uri)
+        )
       ; ( Transaction_status.Failure.Permissions_precondition_unsatisfied
-        , Eq_data.(check_checked Tc.auth_required edit_action_state (a.edit_action_state)))
+        , Eq_data.(
+            check_checked Tc.auth_required edit_action_state a.edit_action_state)
+        )
       ; ( Transaction_status.Failure.Permissions_precondition_unsatisfied
-        , Eq_data.(check_checked Tc.auth_required set_token_symbol (a.set_token_symbol)))
+        , Eq_data.(
+            check_checked Tc.auth_required set_token_symbol a.set_token_symbol)
+        )
       ; ( Transaction_status.Failure.Permissions_precondition_unsatisfied
-        , Eq_data.(check_checked Tc.auth_required increment_nonce (a.increment_nonce)))
+        , Eq_data.(
+            check_checked Tc.auth_required increment_nonce a.increment_nonce) )
       ; ( Transaction_status.Failure.Permissions_precondition_unsatisfied
-        , Eq_data.(check_checked Tc.auth_required set_voting_for (a.set_voting_for)))
+        , Eq_data.(
+            check_checked Tc.auth_required set_voting_for a.set_voting_for) )
       ; ( Transaction_status.Failure.Permissions_precondition_unsatisfied
-        , Eq_data.(check_checked Tc.auth_required set_timing (a.set_timing)))
+        , Eq_data.(check_checked Tc.auth_required set_timing a.set_timing) )
       ]
 
     let check ~check t a =
-      List.iter
-        ~f:(fun (failure, passed) -> check failure passed)
-        (checks t a)
+      List.iter ~f:(fun (failure, passed) -> check failure passed) (checks t a)
 
     let digest (t : t) =
       Random_oracle.Checked.(
@@ -1059,45 +1079,32 @@ module Permissions = struct
 
   let typ () : (Checked.t, t) Typ.t =
     Typ.of_hlistable
-      [ Or_ignore.typ
-          Permissions.Auth_required.typ
-          ~ignore:(Permissions.Auth_required.None)
-      ; Or_ignore.typ
-          Permissions.Auth_required.typ
-          ~ignore:(Permissions.Auth_required.None)
-      ; Or_ignore.typ
-          Permissions.Auth_required.typ
-          ~ignore:(Permissions.Auth_required.None)
-      ; Or_ignore.typ
-          Permissions.Auth_required.typ
-          ~ignore:(Permissions.Auth_required.None)
-      ; Or_ignore.typ
-          Permissions.Auth_required.typ
-          ~ignore:(Permissions.Auth_required.None)
-      ; Or_ignore.typ
-          Permissions.Auth_required.typ
-          ~ignore:(Permissions.Auth_required.None)
-      ; Or_ignore.typ
-          Permissions.Auth_required.typ
-          ~ignore:(Permissions.Auth_required.None)
-      ; Or_ignore.typ
-          Permissions.Auth_required.typ
-          ~ignore:(Permissions.Auth_required.None)
-      ; Or_ignore.typ
-          Permissions.Auth_required.typ
-          ~ignore:(Permissions.Auth_required.None)
-      ; Or_ignore.typ
-          Permissions.Auth_required.typ
-          ~ignore:(Permissions.Auth_required.None)
-      ; Or_ignore.typ
-          Permissions.Auth_required.typ
-          ~ignore:(Permissions.Auth_required.None)
-      ; Or_ignore.typ
-          Permissions.Auth_required.typ
-          ~ignore:(Permissions.Auth_required.None)
-      ; Or_ignore.typ
-          Permissions.Auth_required.typ
-          ~ignore:(Permissions.Auth_required.None)
+      [ Or_ignore.typ Permissions.Auth_required.typ
+          ~ignore:Permissions.Auth_required.None
+      ; Or_ignore.typ Permissions.Auth_required.typ
+          ~ignore:Permissions.Auth_required.None
+      ; Or_ignore.typ Permissions.Auth_required.typ
+          ~ignore:Permissions.Auth_required.None
+      ; Or_ignore.typ Permissions.Auth_required.typ
+          ~ignore:Permissions.Auth_required.None
+      ; Or_ignore.typ Permissions.Auth_required.typ
+          ~ignore:Permissions.Auth_required.None
+      ; Or_ignore.typ Permissions.Auth_required.typ
+          ~ignore:Permissions.Auth_required.None
+      ; Or_ignore.typ Permissions.Auth_required.typ
+          ~ignore:Permissions.Auth_required.None
+      ; Or_ignore.typ Permissions.Auth_required.typ
+          ~ignore:Permissions.Auth_required.None
+      ; Or_ignore.typ Permissions.Auth_required.typ
+          ~ignore:Permissions.Auth_required.None
+      ; Or_ignore.typ Permissions.Auth_required.typ
+          ~ignore:Permissions.Auth_required.None
+      ; Or_ignore.typ Permissions.Auth_required.typ
+          ~ignore:Permissions.Auth_required.None
+      ; Or_ignore.typ Permissions.Auth_required.typ
+          ~ignore:Permissions.Auth_required.None
+      ; Or_ignore.typ Permissions.Auth_required.typ
+          ~ignore:Permissions.Auth_required.None
       ]
       ~var_to_hlist:Checked.to_hlist ~var_of_hlist:Checked.of_hlist
       ~value_to_hlist:to_hlist ~value_of_hlist:of_hlist
@@ -1116,36 +1123,53 @@ module Permissions = struct
       ; increment_nonce
       ; set_voting_for
       ; set_timing
-      }
-      (a : Permissions.t) =
-   [ ( Transaction_status.Failure.Permissions_precondition_unsatisfied
-        , Eq_data.(check ~label:"edit_state" Tc.auth_required edit_state a.edit_state))
-   ; ( Transaction_status.Failure.Permissions_precondition_unsatisfied
-        , Eq_data.(check ~label:"send" Tc.auth_required send a.send))
-   ; ( Transaction_status.Failure.Permissions_precondition_unsatisfied
-        , Eq_data.(check ~label:"receive" Tc.auth_required receive a.receive))
-   ; ( Transaction_status.Failure.Permissions_precondition_unsatisfied
-        , Eq_data.(check ~label:"access" Tc.auth_required access a.access))
-   ; ( Transaction_status.Failure.Permissions_precondition_unsatisfied
-        , Eq_data.(check ~label:"set_delegate" Tc.auth_required set_delegate a.set_delegate))
-   ; ( Transaction_status.Failure.Permissions_precondition_unsatisfied
-        , Eq_data.(check ~label:"set_permissions" Tc.auth_required set_permissions a.set_permissions))
-   ; ( Transaction_status.Failure.Permissions_precondition_unsatisfied
-        , Eq_data.(check ~label:"set_verification_key_auth"
-          Tc.auth_required set_verification_key (fst a.set_verification_key)))
-   ; ( Transaction_status.Failure.Permissions_precondition_unsatisfied
-        , Eq_data.(check ~label:"set_zkapp_uri" Tc.auth_required set_zkapp_uri a.set_zkapp_uri))
-   ; ( Transaction_status.Failure.Permissions_precondition_unsatisfied
-        , Eq_data.(check ~label:"edit_action_state" Tc.auth_required edit_action_state a.edit_action_state))
-   ; ( Transaction_status.Failure.Permissions_precondition_unsatisfied
-        , Eq_data.(check ~label:"set_token_symbol" Tc.auth_required set_token_symbol a.set_token_symbol))
-   ; ( Transaction_status.Failure.Permissions_precondition_unsatisfied
-        , Eq_data.(check ~label:"increment_nonce" Tc.auth_required increment_nonce a.increment_nonce))
-   ; ( Transaction_status.Failure.Permissions_precondition_unsatisfied
-        , Eq_data.(check ~label:"set_voting_for" Tc.auth_required set_voting_for a.set_voting_for))
-   ; ( Transaction_status.Failure.Permissions_precondition_unsatisfied
-        , Eq_data.(check ~label:"set_timing" Tc.auth_required set_timing a.set_timing))
-   ]
+      } (a : Permissions.t) =
+    [ ( Transaction_status.Failure.Permissions_precondition_unsatisfied
+      , Eq_data.(
+          check ~label:"edit_state" Tc.auth_required edit_state a.edit_state) )
+    ; ( Transaction_status.Failure.Permissions_precondition_unsatisfied
+      , Eq_data.(check ~label:"send" Tc.auth_required send a.send) )
+    ; ( Transaction_status.Failure.Permissions_precondition_unsatisfied
+      , Eq_data.(check ~label:"receive" Tc.auth_required receive a.receive) )
+    ; ( Transaction_status.Failure.Permissions_precondition_unsatisfied
+      , Eq_data.(check ~label:"access" Tc.auth_required access a.access) )
+    ; ( Transaction_status.Failure.Permissions_precondition_unsatisfied
+      , Eq_data.(
+          check ~label:"set_delegate" Tc.auth_required set_delegate
+            a.set_delegate) )
+    ; ( Transaction_status.Failure.Permissions_precondition_unsatisfied
+      , Eq_data.(
+          check ~label:"set_permissions" Tc.auth_required set_permissions
+            a.set_permissions) )
+    ; ( Transaction_status.Failure.Permissions_precondition_unsatisfied
+      , Eq_data.(
+          check ~label:"set_verification_key_auth" Tc.auth_required
+            set_verification_key
+            (fst a.set_verification_key)) )
+    ; ( Transaction_status.Failure.Permissions_precondition_unsatisfied
+      , Eq_data.(
+          check ~label:"set_zkapp_uri" Tc.auth_required set_zkapp_uri
+            a.set_zkapp_uri) )
+    ; ( Transaction_status.Failure.Permissions_precondition_unsatisfied
+      , Eq_data.(
+          check ~label:"edit_action_state" Tc.auth_required edit_action_state
+            a.edit_action_state) )
+    ; ( Transaction_status.Failure.Permissions_precondition_unsatisfied
+      , Eq_data.(
+          check ~label:"set_token_symbol" Tc.auth_required set_token_symbol
+            a.set_token_symbol) )
+    ; ( Transaction_status.Failure.Permissions_precondition_unsatisfied
+      , Eq_data.(
+          check ~label:"increment_nonce" Tc.auth_required increment_nonce
+            a.increment_nonce) )
+    ; ( Transaction_status.Failure.Permissions_precondition_unsatisfied
+      , Eq_data.(
+          check ~label:"set_voting_for" Tc.auth_required set_voting_for
+            a.set_voting_for) )
+    ; ( Transaction_status.Failure.Permissions_precondition_unsatisfied
+      , Eq_data.(
+          check ~label:"set_timing" Tc.auth_required set_timing a.set_timing) )
+    ]
 
   let check ~check t a =
     List.iter

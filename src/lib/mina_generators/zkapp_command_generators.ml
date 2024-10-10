@@ -835,7 +835,9 @@ let gen_account_update_body_components (type a b c d) ?global_slot
   let%bind account_precondition =
     f_account_precondition ~first_use_of_account account
   in
-  let%bind permissions_precondition = Account_update.Permissions_precondition.gen in
+  let%bind permissions_precondition =
+    Account_update.Permissions_precondition.gen
+  in
   (* update the depth when generating `account_updates` in Zkapp_command.t *)
   let call_depth = 0 in
   let%bind use_full_commitment =

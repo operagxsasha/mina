@@ -275,8 +275,9 @@ module Account_update_under_construction = struct
                   }
             ; account = Account_condition.to_predicate t.account_condition
             ; permissions =
-                var_of_t (Zkapp_precondition.Permissions.typ ())
-                Zkapp_precondition.Permissions.accept
+                var_of_t
+                  (Zkapp_precondition.Permissions.typ ())
+                  Zkapp_precondition.Permissions.accept
                 (* TODO this is probably wrong *)
             ; valid_while = var_of_t Zkapp_precondition.Valid_while.typ Ignore
             }

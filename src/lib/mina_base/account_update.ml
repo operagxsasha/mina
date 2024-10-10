@@ -1011,8 +1011,9 @@ module Permissions_precondition = struct
 
       let (_ :
             ( t
-            , Mina_wire_types.Mina_base.Account_update.Permissions_precondition.V1.t
-            )
+            , Mina_wire_types.Mina_base.Account_update.Permissions_precondition
+              .V1
+              .t )
             Type_equal.t ) =
         Type_equal.T
 
@@ -1133,7 +1134,8 @@ module Preconditions = struct
     Typ.of_hlistable
       [ Zkapp_precondition.Protocol_state.typ
       ; Account_precondition.typ ()
-      ; Permissions_precondition.typ () (* TODO why does account have the unit arg, do I need it too? *)
+      ; Permissions_precondition.typ ()
+        (* TODO why does account have the unit arg, do I need it too? *)
       ; Zkapp_precondition.Valid_while.typ
       ]
       ~var_to_hlist:Checked.to_hlist ~var_of_hlist:Checked.of_hlist

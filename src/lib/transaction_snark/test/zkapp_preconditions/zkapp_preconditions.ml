@@ -308,7 +308,8 @@ let%test_module "Protocol state precondition tests" =
                             ; account =
                                 Zkapp_precondition.Account.nonce
                                   (Account.Nonce.succ sender_nonce)
-                            ; permissions = Zkapp_precondition.Permissions.accept
+                            ; permissions =
+                                Zkapp_precondition.Permissions.accept
                             ; valid_while = Ignore
                             }
                         ; use_full_commitment = false
@@ -342,7 +343,8 @@ let%test_module "Protocol state precondition tests" =
                             { Account_update.Preconditions.network =
                                 invalid_network_precondition
                             ; account = Zkapp_precondition.Account.accept
-                            ; permissions = Zkapp_precondition.Permissions.accept
+                            ; permissions =
+                                Zkapp_precondition.Permissions.accept
                             ; valid_while = Ignore
                             }
                         ; use_full_commitment = true

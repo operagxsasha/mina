@@ -117,44 +117,6 @@ val user_default : t
 
 val empty : t
 
-module As_record : sig
-  type t
-  val deriver :
-    (< contramap : (t -> t) ref;
-       graphql_arg : (unit -> t Fields_derivers_graphql.Schema.Arg.arg_typ) ref;
-       graphql_arg_accumulator : t Fields_derivers_graphql.Graphql.Args.Acc.T.t
-                                 ref;
-       graphql_creator : ('a -> t) ref;
-       graphql_fields : t Fields_derivers_graphql.Graphql.Fields.Input.T.t ref;
-       graphql_fields_accumulator : t
-                                    Fields_derivers_graphql.Graphql.Fields.Accumulator.T.t
-                                    list ref;
-       graphql_query : string option ref;
-       graphql_query_accumulator : (string * string option) option list ref;
-       js_layout : [> `Assoc of (string * Yojson.Safe.t) list ] ref;
-       js_layout_accumulator : Fields_derivers_zkapps.Js_layout.Accumulator.field
-                               option list ref;
-       map : (t -> t) ref;
-       nullable_graphql_arg : (unit ->
-                               'b Fields_derivers_graphql.Schema.Arg.arg_typ)
-                              ref;
-       nullable_graphql_fields : t option
-                                 Fields_derivers_graphql.Graphql.Fields.Input.T.t
-                                 ref;
-       of_json : ([> `Assoc of (string * Yojson.Safe.t) list ] -> t) ref;
-       of_json_creator : Yojson.Safe.t Core_kernel.String.Map.t ref;
-       skip : bool ref;
-       to_json : (t -> [> `Assoc of (string * Yojson.Safe.t) list ]) ref;
-       to_json_accumulator : (string * (t -> Yojson.Safe.t)) option list ref;
-       .. >
-     as 'a) ->
-    'a
-end
-
-val to_record : Auth_required.t * Unsigned.uint32 -> As_record.t
-
-val of_record : As_record.t -> Auth_required.t * Unsigned.uint32
-
 val deriver :
      (< contramap : (t -> t) ref
       ; graphql_arg : (unit -> t Fields_derivers_graphql.Schema.Arg.arg_typ) ref

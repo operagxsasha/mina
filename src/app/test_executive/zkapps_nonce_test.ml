@@ -166,7 +166,6 @@ module Make (Inputs : Intf.Test.Inputs_intf) = struct
                      ; account =
                          Zkapp_precondition.Account.nonce
                            (Account.Nonce.of_int 1)
-                     ; permissions = Zkapp_precondition.Permissions.accept
                      ; valid_while = Ignore
                      } )
                 []
@@ -194,7 +193,6 @@ module Make (Inputs : Intf.Test.Inputs_intf) = struct
                      ; account =
                          Zkapp_precondition.Account.nonce
                            (Account.Nonce.of_int 2)
-                     ; permissions = Zkapp_precondition.Permissions.accept
                      ; valid_while = Ignore
                      } )
                 []

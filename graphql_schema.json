@@ -2464,178 +2464,6 @@
         },
         {
           "kind": "INPUT_OBJECT",
-          "name": "AccountPreconditionInput",
-          "description": null,
-          "fields": [
-            {
-              "name": "balance",
-              "description": null,
-              "args": [],
-              "type": {
-                "kind": "INPUT_OBJECT",
-                "name": "BalanceIntervalInput",
-                "ofType": null
-              },
-              "isDeprecated": false,
-              "deprecationReason": null
-            },
-            {
-              "name": "nonce",
-              "description": null,
-              "args": [],
-              "type": {
-                "kind": "INPUT_OBJECT",
-                "name": "NonceIntervalInput",
-                "ofType": null
-              },
-              "isDeprecated": false,
-              "deprecationReason": null
-            },
-            {
-              "name": "receiptChainHash",
-              "description": null,
-              "args": [],
-              "type": { "kind": "SCALAR", "name": "Field", "ofType": null },
-              "isDeprecated": false,
-              "deprecationReason": null
-            },
-            {
-              "name": "delegate",
-              "description": null,
-              "args": [],
-              "type": {
-                "kind": "SCALAR",
-                "name": "PublicKey",
-                "ofType": null
-              },
-              "isDeprecated": false,
-              "deprecationReason": null
-            },
-            {
-              "name": "state",
-              "description": null,
-              "args": [],
-              "type": {
-                "kind": "NON_NULL",
-                "name": null,
-                "ofType": {
-                  "kind": "LIST",
-                  "name": null,
-                  "ofType": {
-                    "kind": "SCALAR",
-                    "name": "Field",
-                    "ofType": null
-                  }
-                }
-              },
-              "isDeprecated": false,
-              "deprecationReason": null
-            },
-            {
-              "name": "actionState",
-              "description": null,
-              "args": [],
-              "type": { "kind": "SCALAR", "name": "Field", "ofType": null },
-              "isDeprecated": false,
-              "deprecationReason": null
-            },
-            {
-              "name": "provedState",
-              "description": null,
-              "args": [],
-              "type": { "kind": "SCALAR", "name": "Boolean", "ofType": null },
-              "isDeprecated": false,
-              "deprecationReason": null
-            },
-            {
-              "name": "isNew",
-              "description": null,
-              "args": [],
-              "type": { "kind": "SCALAR", "name": "Boolean", "ofType": null },
-              "isDeprecated": false,
-              "deprecationReason": null
-            }
-          ],
-          "inputFields": [
-            {
-              "name": "balance",
-              "description": null,
-              "type": {
-                "kind": "INPUT_OBJECT",
-                "name": "BalanceIntervalInput",
-                "ofType": null
-              },
-              "defaultValue": null
-            },
-            {
-              "name": "nonce",
-              "description": null,
-              "type": {
-                "kind": "INPUT_OBJECT",
-                "name": "NonceIntervalInput",
-                "ofType": null
-              },
-              "defaultValue": null
-            },
-            {
-              "name": "receiptChainHash",
-              "description": null,
-              "type": { "kind": "SCALAR", "name": "Field", "ofType": null },
-              "defaultValue": null
-            },
-            {
-              "name": "delegate",
-              "description": null,
-              "type": {
-                "kind": "SCALAR",
-                "name": "PublicKey",
-                "ofType": null
-              },
-              "defaultValue": null
-            },
-            {
-              "name": "state",
-              "description": null,
-              "type": {
-                "kind": "NON_NULL",
-                "name": null,
-                "ofType": {
-                  "kind": "LIST",
-                  "name": null,
-                  "ofType": {
-                    "kind": "SCALAR",
-                    "name": "Field",
-                    "ofType": null
-                  }
-                }
-              },
-              "defaultValue": null
-            },
-            {
-              "name": "actionState",
-              "description": null,
-              "type": { "kind": "SCALAR", "name": "Field", "ofType": null },
-              "defaultValue": null
-            },
-            {
-              "name": "provedState",
-              "description": null,
-              "type": { "kind": "SCALAR", "name": "Boolean", "ofType": null },
-              "defaultValue": null
-            },
-            {
-              "name": "isNew",
-              "description": null,
-              "type": { "kind": "SCALAR", "name": "Boolean", "ofType": null },
-              "defaultValue": null
-            }
-          ],
-          "interfaces": null,
-          "enumValues": null,
-          "possibleTypes": null
-        },
-        {
-          "kind": "INPUT_OBJECT",
           "name": "PermissionsPreconditionInput",
           "description": null,
           "fields": [
@@ -2934,6 +2762,208 @@
         },
         {
           "kind": "INPUT_OBJECT",
+          "name": "AccountPreconditionInput",
+          "description": null,
+          "fields": [
+            {
+              "name": "balance",
+              "description": null,
+              "args": [],
+              "type": {
+                "kind": "INPUT_OBJECT",
+                "name": "BalanceIntervalInput",
+                "ofType": null
+              },
+              "isDeprecated": false,
+              "deprecationReason": null
+            },
+            {
+              "name": "nonce",
+              "description": null,
+              "args": [],
+              "type": {
+                "kind": "INPUT_OBJECT",
+                "name": "NonceIntervalInput",
+                "ofType": null
+              },
+              "isDeprecated": false,
+              "deprecationReason": null
+            },
+            {
+              "name": "receiptChainHash",
+              "description": null,
+              "args": [],
+              "type": { "kind": "SCALAR", "name": "Field", "ofType": null },
+              "isDeprecated": false,
+              "deprecationReason": null
+            },
+            {
+              "name": "delegate",
+              "description": null,
+              "args": [],
+              "type": {
+                "kind": "SCALAR",
+                "name": "PublicKey",
+                "ofType": null
+              },
+              "isDeprecated": false,
+              "deprecationReason": null
+            },
+            {
+              "name": "state",
+              "description": null,
+              "args": [],
+              "type": {
+                "kind": "NON_NULL",
+                "name": null,
+                "ofType": {
+                  "kind": "LIST",
+                  "name": null,
+                  "ofType": {
+                    "kind": "SCALAR",
+                    "name": "Field",
+                    "ofType": null
+                  }
+                }
+              },
+              "isDeprecated": false,
+              "deprecationReason": null
+            },
+            {
+              "name": "actionState",
+              "description": null,
+              "args": [],
+              "type": { "kind": "SCALAR", "name": "Field", "ofType": null },
+              "isDeprecated": false,
+              "deprecationReason": null
+            },
+            {
+              "name": "provedState",
+              "description": null,
+              "args": [],
+              "type": { "kind": "SCALAR", "name": "Boolean", "ofType": null },
+              "isDeprecated": false,
+              "deprecationReason": null
+            },
+            {
+              "name": "isNew",
+              "description": null,
+              "args": [],
+              "type": { "kind": "SCALAR", "name": "Boolean", "ofType": null },
+              "isDeprecated": false,
+              "deprecationReason": null
+            },
+            {
+              "name": "permissions",
+              "description": null,
+              "args": [],
+              "type": {
+                "kind": "NON_NULL",
+                "name": null,
+                "ofType": {
+                  "kind": "INPUT_OBJECT",
+                  "name": "PermissionsPreconditionInput",
+                  "ofType": null
+                }
+              },
+              "isDeprecated": false,
+              "deprecationReason": null
+            }
+          ],
+          "inputFields": [
+            {
+              "name": "balance",
+              "description": null,
+              "type": {
+                "kind": "INPUT_OBJECT",
+                "name": "BalanceIntervalInput",
+                "ofType": null
+              },
+              "defaultValue": null
+            },
+            {
+              "name": "nonce",
+              "description": null,
+              "type": {
+                "kind": "INPUT_OBJECT",
+                "name": "NonceIntervalInput",
+                "ofType": null
+              },
+              "defaultValue": null
+            },
+            {
+              "name": "receiptChainHash",
+              "description": null,
+              "type": { "kind": "SCALAR", "name": "Field", "ofType": null },
+              "defaultValue": null
+            },
+            {
+              "name": "delegate",
+              "description": null,
+              "type": {
+                "kind": "SCALAR",
+                "name": "PublicKey",
+                "ofType": null
+              },
+              "defaultValue": null
+            },
+            {
+              "name": "state",
+              "description": null,
+              "type": {
+                "kind": "NON_NULL",
+                "name": null,
+                "ofType": {
+                  "kind": "LIST",
+                  "name": null,
+                  "ofType": {
+                    "kind": "SCALAR",
+                    "name": "Field",
+                    "ofType": null
+                  }
+                }
+              },
+              "defaultValue": null
+            },
+            {
+              "name": "actionState",
+              "description": null,
+              "type": { "kind": "SCALAR", "name": "Field", "ofType": null },
+              "defaultValue": null
+            },
+            {
+              "name": "provedState",
+              "description": null,
+              "type": { "kind": "SCALAR", "name": "Boolean", "ofType": null },
+              "defaultValue": null
+            },
+            {
+              "name": "isNew",
+              "description": null,
+              "type": { "kind": "SCALAR", "name": "Boolean", "ofType": null },
+              "defaultValue": null
+            },
+            {
+              "name": "permissions",
+              "description": null,
+              "type": {
+                "kind": "NON_NULL",
+                "name": null,
+                "ofType": {
+                  "kind": "INPUT_OBJECT",
+                  "name": "PermissionsPreconditionInput",
+                  "ofType": null
+                }
+              },
+              "defaultValue": null
+            }
+          ],
+          "interfaces": null,
+          "enumValues": null,
+          "possibleTypes": null
+        },
+        {
+          "kind": "INPUT_OBJECT",
           "name": "GlobalSlotSinceGenesisIntervalInput",
           "description": null,
           "fields": [
@@ -3042,22 +3072,6 @@
               "deprecationReason": null
             },
             {
-              "name": "permissions",
-              "description": null,
-              "args": [],
-              "type": {
-                "kind": "NON_NULL",
-                "name": null,
-                "ofType": {
-                  "kind": "INPUT_OBJECT",
-                  "name": "PermissionsPreconditionInput",
-                  "ofType": null
-                }
-              },
-              "isDeprecated": false,
-              "deprecationReason": null
-            },
-            {
               "name": "validWhile",
               "description": null,
               "args": [],
@@ -3094,20 +3108,6 @@
                 "ofType": {
                   "kind": "INPUT_OBJECT",
                   "name": "AccountPreconditionInput",
-                  "ofType": null
-                }
-              },
-              "defaultValue": null
-            },
-            {
-              "name": "permissions",
-              "description": null,
-              "type": {
-                "kind": "NON_NULL",
-                "name": null,
-                "ofType": {
-                  "kind": "INPUT_OBJECT",
-                  "name": "PermissionsPreconditionInput",
                   "ofType": null
                 }
               },
@@ -7969,6 +7969,22 @@
               "type": { "kind": "SCALAR", "name": "Boolean", "ofType": null },
               "isDeprecated": false,
               "deprecationReason": null
+            },
+            {
+              "name": "permissions",
+              "description": null,
+              "args": [],
+              "type": {
+                "kind": "NON_NULL",
+                "name": null,
+                "ofType": {
+                  "kind": "OBJECT",
+                  "name": "PermissionsPrecondition",
+                  "ofType": null
+                }
+              },
+              "isDeprecated": false,
+              "deprecationReason": null
             }
           ],
           "inputFields": null,
@@ -8329,22 +8345,6 @@
                 "ofType": {
                   "kind": "OBJECT",
                   "name": "AccountPrecondition",
-                  "ofType": null
-                }
-              },
-              "isDeprecated": false,
-              "deprecationReason": null
-            },
-            {
-              "name": "permissions",
-              "description": null,
-              "args": [],
-              "type": {
-                "kind": "NON_NULL",
-                "name": null,
-                "ofType": {
-                  "kind": "OBJECT",
-                  "name": "PermissionsPrecondition",
                   "ofType": null
                 }
               },

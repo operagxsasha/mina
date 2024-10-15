@@ -460,325 +460,6 @@ module Leaf_typs = struct
   let token_id = Hash.typ token_id
 end
 
-module Account = struct
-  [%%versioned
-  module Stable = struct
-    module V2 = struct
-      type t = Mina_wire_types.Mina_base.Zkapp_precondition.Account.V2.t =
-        { balance : Balance.Stable.V1.t Numeric.Stable.V1.t
-        ; nonce : Account_nonce.Stable.V1.t Numeric.Stable.V1.t
-        ; receipt_chain_hash : Receipt.Chain_hash.Stable.V1.t Hash.Stable.V1.t
-        ; delegate : Public_key.Compressed.Stable.V1.t Eq_data.Stable.V1.t
-        ; state : F.Stable.V1.t Eq_data.Stable.V1.t Zkapp_state.V.Stable.V1.t
-        ; action_state : F.Stable.V1.t Eq_data.Stable.V1.t
-        ; proved_state : bool Eq_data.Stable.V1.t
-        ; is_new : bool Eq_data.Stable.V1.t
-        }
-      [@@deriving annot, hlist, sexp, equal, yojson, hash, compare, fields]
-
-      let to_latest = Fn.id
-    end
-  end]
-
-  let gen : t Quickcheck.Generator.t =
-    let open Quickcheck.Let_syntax in
-    let%bind balance = Numeric.gen Balance.gen Balance.compare in
-    let%bind nonce = Numeric.gen Account_nonce.gen Account_nonce.compare in
-    let%bind receipt_chain_hash = Or_ignore.gen Receipt.Chain_hash.gen in
-    let%bind delegate = Eq_data.gen Public_key.Compressed.gen in
-    let%bind state =
-      let%bind fields =
-        let field_gen = Snark_params.Tick.Field.gen in
-        Quickcheck.Generator.list_with_length 8 (Or_ignore.gen field_gen)
-      in
-      (* won't raise because length is correct *)
-      Quickcheck.Generator.return (Zkapp_state.V.of_list_exn fields)
-    in
-    let%bind action_state =
-      let%bind n = Int.gen_uniform_incl Int.min_value Int.max_value in
-      let field_gen = Quickcheck.Generator.return (F.of_int n) in
-      Or_ignore.gen field_gen
-    in
-    let%bind proved_state = Or_ignore.gen Quickcheck.Generator.bool in
-    let%map is_new = Or_ignore.gen Quickcheck.Generator.bool in
-    { balance
-    ; nonce
-    ; receipt_chain_hash
-    ; delegate
-    ; state
-    ; action_state
-    ; proved_state
-    ; is_new
-    }
-
-  let accept : t =
-    { balance = Ignore
-    ; nonce = Ignore
-    ; receipt_chain_hash = Ignore
-    ; delegate = Ignore
-    ; state =
-        Vector.init Zkapp_state.Max_state_size.n ~f:(fun _ -> Or_ignore.Ignore)
-    ; action_state = Ignore
-    ; proved_state = Ignore
-    ; is_new = Ignore
-    }
-
-  let is_accept : t -> bool = equal accept
-
-  let nonce (n : Account.Nonce.t) =
-    let nonce : _ Numeric.t = Check { lower = n; upper = n } in
-    { accept with nonce }
-
-  let is_nonce (t : t) =
-    match t.nonce with
-    | Ignore ->
-        false
-    | Check { lower; upper } ->
-        (* nonce is exact, all other fields are Ignore *)
-        Mina_numbers.Account_nonce.equal lower upper
-        && is_accept { t with nonce = Ignore }
-
-  let deriver obj =
-    let open Fields_derivers_zkapps in
-    let ( !. ) = ( !. ) ~t_fields_annots in
-    let action_state =
-      needs_custom_js ~js_type:field ~name:"ActionState" field
-    in
-    Fields.make_creator obj ~balance:!.Numeric.Derivers.balance
-      ~nonce:!.Numeric.Derivers.nonce
-      ~receipt_chain_hash:!.(Or_ignore.deriver field)
-      ~delegate:!.(Or_ignore.deriver public_key)
-      ~state:!.(Zkapp_state.deriver @@ Or_ignore.deriver field)
-      ~action_state:!.(Or_ignore.deriver action_state)
-      ~proved_state:!.(Or_ignore.deriver bool)
-      ~is_new:!.(Or_ignore.deriver bool)
-    |> finish "AccountPrecondition" ~t_toplevel_annots
-
-  let%test_unit "json roundtrip" =
-    let b = Balance.of_nanomina_int_exn 1000 in
-    let predicate : t =
-      { accept with
-        balance = Or_ignore.Check { Closed_interval.lower = b; upper = b }
-      ; action_state = Or_ignore.Check (Field.of_int 99)
-      ; proved_state = Or_ignore.Check true
-      }
-    in
-    let module Fd = Fields_derivers_zkapps.Derivers in
-    let full = deriver (Fd.o ()) in
-    [%test_eq: t] predicate (predicate |> Fd.to_json full |> Fd.of_json full)
-
-  let to_input
-      ({ balance
-       ; nonce
-       ; receipt_chain_hash
-       ; delegate
-       ; state
-       ; action_state
-       ; proved_state
-       ; is_new
-       } :
-        t ) =
-    let open Random_oracle_input.Chunked in
-    List.reduce_exn ~f:append
-      [ Numeric.(to_input Tc.balance balance)
-      ; Numeric.(to_input Tc.nonce nonce)
-      ; Hash.(to_input Tc.receipt_chain_hash receipt_chain_hash)
-      ; Eq_data.(to_input (Tc.public_key ()) delegate)
-      ; Vector.reduce_exn ~f:append
-          (Vector.map state ~f:Eq_data.(to_input Tc.field))
-      ; Eq_data.(to_input (Lazy.force Tc.action_state)) action_state
-      ; Eq_data.(to_input Tc.boolean) proved_state
-      ; Eq_data.(to_input Tc.boolean) is_new
-      ]
-
-  let digest t =
-    Random_oracle.(
-      hash ~init:Hash_prefix.zkapp_precondition_account
-        (pack_input (to_input t)))
-
-  module Checked = struct
-    type t =
-      { balance : Balance.var Numeric.Checked.t
-      ; nonce : Account_nonce.Checked.t Numeric.Checked.t
-      ; receipt_chain_hash : Receipt.Chain_hash.var Hash.Checked.t
-      ; delegate : Public_key.Compressed.var Eq_data.Checked.t
-      ; state : Field.Var.t Eq_data.Checked.t Zkapp_state.V.t
-      ; action_state : Field.Var.t Eq_data.Checked.t
-      ; proved_state : Boolean.var Eq_data.Checked.t
-      ; is_new : Boolean.var Eq_data.Checked.t
-      }
-    [@@deriving hlist]
-
-    let to_input
-        ({ balance
-         ; nonce
-         ; receipt_chain_hash
-         ; delegate
-         ; state
-         ; action_state
-         ; proved_state
-         ; is_new
-         } :
-          t ) =
-      let open Random_oracle_input.Chunked in
-      List.reduce_exn ~f:append
-        [ Numeric.(Checked.to_input Tc.balance balance)
-        ; Numeric.(Checked.to_input Tc.nonce nonce)
-        ; Hash.(to_input_checked Tc.receipt_chain_hash receipt_chain_hash)
-        ; Eq_data.(to_input_checked (Tc.public_key ()) delegate)
-        ; Vector.reduce_exn ~f:append
-            (Vector.map state ~f:Eq_data.(to_input_checked Tc.field))
-        ; Eq_data.(to_input_checked (Lazy.force Tc.action_state)) action_state
-        ; Eq_data.(to_input_checked Tc.boolean) proved_state
-        ; Eq_data.(to_input_checked Tc.boolean) is_new
-        ]
-
-    open Impl
-
-    let checks ~new_account
-        { balance
-        ; nonce
-        ; receipt_chain_hash
-        ; delegate
-        ; state
-        ; action_state
-        ; proved_state
-        ; is_new
-        } (a : Account.Checked.Unhashed.t) =
-      [ ( Transaction_status.Failure.Account_balance_precondition_unsatisfied
-        , Numeric.(Checked.check Tc.balance balance a.balance) )
-      ; ( Transaction_status.Failure.Account_nonce_precondition_unsatisfied
-        , Numeric.(Checked.check Tc.nonce nonce a.nonce) )
-      ; ( Transaction_status.Failure
-          .Account_receipt_chain_hash_precondition_unsatisfied
-        , Eq_data.(
-            check_checked Tc.receipt_chain_hash receipt_chain_hash
-              a.receipt_chain_hash) )
-      ; ( Transaction_status.Failure.Account_delegate_precondition_unsatisfied
-        , Eq_data.(check_checked (Tc.public_key ()) delegate a.delegate) )
-      ]
-      @ [ ( Transaction_status.Failure
-            .Account_action_state_precondition_unsatisfied
-          , Boolean.any
-              Vector.(
-                to_list
-                  (map a.zkapp.action_state
-                     ~f:
-                       Eq_data.(
-                         check_checked (Lazy.force Tc.action_state) action_state) ))
-          )
-        ]
-      @ ( Vector.(
-            to_list
-              (map2 state a.zkapp.app_state ~f:Eq_data.(check_checked Tc.field)))
-        |> List.mapi ~f:(fun i check ->
-               let failure =
-                 Transaction_status.Failure
-                 .Account_app_state_precondition_unsatisfied
-                   i
-               in
-               (failure, check) ) )
-      @ [ ( Transaction_status.Failure
-            .Account_proved_state_precondition_unsatisfied
-          , Eq_data.(check_checked Tc.boolean proved_state a.zkapp.proved_state)
-          )
-        ]
-      @ [ ( Transaction_status.Failure.Account_is_new_precondition_unsatisfied
-          , Eq_data.(check_checked Tc.boolean is_new new_account) )
-        ]
-
-    let check ~new_account ~check t a =
-      List.iter
-        ~f:(fun (failure, passed) -> check failure passed)
-        (checks ~new_account t a)
-
-    let digest (t : t) =
-      Random_oracle.Checked.(
-        hash ~init:Hash_prefix.zkapp_precondition_account
-          (pack_input (to_input t)))
-  end
-
-  let typ () : (Checked.t, t) Typ.t =
-    let open Leaf_typs in
-    Typ.of_hlistable
-      [ balance
-      ; nonce
-      ; receipt_chain_hash
-      ; public_key ()
-      ; Zkapp_state.typ (Or_ignore.typ Field.typ ~ignore:Field.zero)
-      ; Or_ignore.typ Field.typ
-          ~ignore:Zkapp_account.Actions.empty_state_element
-      ; Or_ignore.typ Boolean.typ ~ignore:false
-      ; Or_ignore.typ Boolean.typ ~ignore:false
-      ]
-      ~var_to_hlist:Checked.to_hlist ~var_of_hlist:Checked.of_hlist
-      ~value_to_hlist:to_hlist ~value_of_hlist:of_hlist
-
-  let checks ~new_account
-      { balance
-      ; nonce
-      ; receipt_chain_hash
-      ; delegate
-      ; state
-      ; action_state
-      ; proved_state
-      ; is_new
-      } (a : Account.t) =
-    [ ( Transaction_status.Failure.Account_balance_precondition_unsatisfied
-      , Numeric.(check ~label:"balance" Tc.balance balance a.balance) )
-    ; ( Transaction_status.Failure.Account_nonce_precondition_unsatisfied
-      , Numeric.(check ~label:"nonce" Tc.nonce nonce a.nonce) )
-    ; ( Transaction_status.Failure
-        .Account_receipt_chain_hash_precondition_unsatisfied
-      , Eq_data.(
-          check ~label:"receipt_chain_hash" Tc.receipt_chain_hash
-            receipt_chain_hash a.receipt_chain_hash) )
-    ; ( Transaction_status.Failure.Account_delegate_precondition_unsatisfied
-      , let tc = Eq_data.Tc.public_key () in
-        Eq_data.(
-          check ~label:"delegate" tc delegate
-            (Option.value ~default:tc.default a.delegate)) )
-    ]
-    @
-    let zkapp = Option.value ~default:Zkapp_account.default a.zkapp in
-    [ ( Transaction_status.Failure.Account_action_state_precondition_unsatisfied
-      , match
-          List.find (Vector.to_list zkapp.action_state) ~f:(fun state ->
-              Eq_data.(
-                check (Lazy.force Tc.action_state) ~label:"" action_state state)
-              |> Or_error.is_ok )
-        with
-        | None ->
-            Error (Error.createf "Action state mismatch")
-        | Some _ ->
-            Ok () )
-    ]
-    @ List.mapi
-        Vector.(to_list (zip state zkapp.app_state))
-        ~f:(fun i (c, v) ->
-          let failure =
-            Transaction_status.Failure
-            .Account_app_state_precondition_unsatisfied
-              i
-          in
-          (failure, Eq_data.(check Tc.field ~label:(sprintf "state[%d]" i) c v))
-          )
-    @ [ ( Transaction_status.Failure
-          .Account_proved_state_precondition_unsatisfied
-        , Eq_data.(
-            check ~label:"proved_state" Tc.boolean proved_state
-              zkapp.proved_state) )
-      ]
-    @ [ ( Transaction_status.Failure.Account_is_new_precondition_unsatisfied
-        , Eq_data.(check ~label:"is_new" Tc.boolean is_new new_account) )
-      ]
-
-  let check ~new_account ~check t a =
-    List.iter
-      ~f:(fun (failure, res) -> check failure (Result.is_ok res))
-      (checks ~new_account t a)
-end
-
 module Permissions = struct
   [%%versioned
   module Stable = struct
@@ -812,12 +493,79 @@ module Permissions = struct
     end
   end]
 
+  let accept : t =
+    { edit_state = Ignore
+    ; access = Ignore
+    ; send = Ignore
+    ; receive = Ignore
+    ; set_delegate = Ignore
+    ; set_permissions = Ignore
+    ; set_verification_key = Ignore
+    ; set_zkapp_uri = Ignore
+    ; edit_action_state = Ignore
+    ; set_token_symbol = Ignore
+    ; increment_nonce = Ignore
+    ; set_voting_for = Ignore
+    ; set_timing = Ignore
+    }
+
+  let is_accept : t -> bool = equal accept
+
+  let from_perms (perms : Permissions.t) : t =
+    { edit_state = Or_ignore.Check perms.edit_state
+    ; access = Or_ignore.Check perms.access
+    ; send = Or_ignore.Check perms.send
+    ; receive = Or_ignore.Check perms.receive
+    ; set_delegate = Or_ignore.Check perms.set_delegate
+    ; set_permissions = Or_ignore.Check perms.set_permissions
+    ; set_verification_key = Or_ignore.Check (fst perms.set_verification_key)
+    ; set_zkapp_uri = Or_ignore.Check perms.set_zkapp_uri
+    ; edit_action_state = Or_ignore.Check perms.edit_action_state
+    ; set_token_symbol = Or_ignore.Check perms.set_token_symbol
+    ; increment_nonce = Or_ignore.Check perms.increment_nonce
+    ; set_voting_for = Or_ignore.Check perms.set_voting_for
+    ; set_timing = Or_ignore.Check perms.set_timing
+    }
+
+  let gen_valid (perms : Permissions.t) : t Quickcheck.Generator.t =
+    let open Quickcheck.Let_syntax in
+    let%bind edit_state = Or_ignore.gen @@ return perms.edit_state in
+    let%bind access = Or_ignore.gen @@ return perms.access in
+    let%bind send = Or_ignore.gen @@ return perms.send in
+    let%bind receive = Or_ignore.gen @@ return perms.set_delegate in
+    let%bind set_delegate = Or_ignore.gen @@ return perms.set_delegate in
+    let%bind set_permissions = Or_ignore.gen @@ return perms.set_permissions in
+    let%bind set_verification_key =
+      Or_ignore.gen @@ return @@ fst perms.set_verification_key
+    in
+    let%bind set_zkapp_uri = Or_ignore.gen @@ return perms.set_zkapp_uri in
+    let%bind edit_action_state =
+      Or_ignore.gen @@ return perms.edit_action_state
+    in
+    let%bind set_token_symbol =
+      Or_ignore.gen @@ return perms.set_token_symbol
+    in
+    let%bind increment_nonce = Or_ignore.gen @@ return perms.increment_nonce in
+    let%bind set_voting_for = Or_ignore.gen @@ return perms.set_voting_for in
+    let%bind set_timing = Or_ignore.gen @@ return perms.set_timing in
+    return
+      { edit_state
+      ; access
+      ; send
+      ; receive
+      ; set_delegate
+      ; set_permissions
+      ; set_verification_key
+      ; set_zkapp_uri
+      ; edit_action_state
+      ; set_token_symbol
+      ; increment_nonce
+      ; set_voting_for
+      ; set_timing
+      }
+
   let gen : t Quickcheck.Generator.t =
     let open Quickcheck.Let_syntax in
-    (* Auth_required doesn't have public generators
-        if this code lasts to the review stage of the PR
-        it would probably be better to add one than write it here
-    *)
     let auth_required = Permissions.Auth_required.gen in
     let%bind edit_state = Or_ignore.gen auth_required in
     let%bind access = Or_ignore.gen auth_required in
@@ -847,24 +595,6 @@ module Permissions = struct
       ; set_voting_for
       ; set_timing
       }
-
-  let accept : t =
-    { edit_state = Ignore
-    ; access = Ignore
-    ; send = Ignore
-    ; receive = Ignore
-    ; set_delegate = Ignore
-    ; set_permissions = Ignore
-    ; set_verification_key = Ignore
-    ; set_zkapp_uri = Ignore
-    ; edit_action_state = Ignore
-    ; set_token_symbol = Ignore
-    ; increment_nonce = Ignore
-    ; set_voting_for = Ignore
-    ; set_timing = Ignore
-    }
-
-  let is_accept : t -> bool = equal accept
 
   (*
   let nonce (n : Permissions.Nonce.t) =
@@ -1175,6 +905,341 @@ module Permissions = struct
     List.iter
       ~f:(fun (failure, res) -> check failure (Result.is_ok res))
       (checks t a)
+end
+
+module Account = struct
+  [%%versioned
+  module Stable = struct
+    module V2 = struct
+      type t = Mina_wire_types.Mina_base.Zkapp_precondition.Account.V2.t =
+        { balance : Balance.Stable.V1.t Numeric.Stable.V1.t
+        ; nonce : Account_nonce.Stable.V1.t Numeric.Stable.V1.t
+        ; receipt_chain_hash : Receipt.Chain_hash.Stable.V1.t Hash.Stable.V1.t
+        ; delegate : Public_key.Compressed.Stable.V1.t Eq_data.Stable.V1.t
+        ; state : F.Stable.V1.t Eq_data.Stable.V1.t Zkapp_state.V.Stable.V1.t
+        ; action_state : F.Stable.V1.t Eq_data.Stable.V1.t
+        ; proved_state : bool Eq_data.Stable.V1.t
+        ; is_new : bool Eq_data.Stable.V1.t
+        ; permissions : Permissions.Stable.V2.t
+        }
+      [@@deriving annot, hlist, sexp, equal, yojson, hash, compare, fields]
+
+      let to_latest = Fn.id
+    end
+  end]
+
+  let gen : t Quickcheck.Generator.t =
+    let open Quickcheck.Let_syntax in
+    let%bind balance = Numeric.gen Balance.gen Balance.compare in
+    let%bind nonce = Numeric.gen Account_nonce.gen Account_nonce.compare in
+    let%bind receipt_chain_hash = Or_ignore.gen Receipt.Chain_hash.gen in
+    let%bind delegate = Eq_data.gen Public_key.Compressed.gen in
+    let%bind state =
+      let%bind fields =
+        let field_gen = Snark_params.Tick.Field.gen in
+        Quickcheck.Generator.list_with_length 8 (Or_ignore.gen field_gen)
+      in
+      (* won't raise because length is correct *)
+      Quickcheck.Generator.return (Zkapp_state.V.of_list_exn fields)
+    in
+    let%bind action_state =
+      let%bind n = Int.gen_uniform_incl Int.min_value Int.max_value in
+      let field_gen = Quickcheck.Generator.return (F.of_int n) in
+      Or_ignore.gen field_gen
+    in
+    let%bind proved_state = Or_ignore.gen Quickcheck.Generator.bool in
+    let%bind permissions = Permissions.gen in
+    (* TODO gen_valid here? *)
+    let%map is_new = Or_ignore.gen Quickcheck.Generator.bool in
+    { balance
+    ; nonce
+    ; receipt_chain_hash
+    ; delegate
+    ; state
+    ; action_state
+    ; proved_state
+    ; is_new
+    ; permissions
+    }
+
+  let accept : t =
+    { balance = Ignore
+    ; nonce = Ignore
+    ; receipt_chain_hash = Ignore
+    ; delegate = Ignore
+    ; state =
+        Vector.init Zkapp_state.Max_state_size.n ~f:(fun _ -> Or_ignore.Ignore)
+    ; action_state = Ignore
+    ; proved_state = Ignore
+    ; is_new = Ignore
+    ; permissions = Permissions.accept
+    }
+
+  let is_accept : t -> bool = equal accept
+
+  let nonce (n : Account.Nonce.t) =
+    let nonce : _ Numeric.t = Check { lower = n; upper = n } in
+    { accept with nonce }
+
+  let is_nonce (t : t) =
+    match t.nonce with
+    | Ignore ->
+        false
+    | Check { lower; upper } ->
+        (* nonce is exact, all other fields are Ignore *)
+        Mina_numbers.Account_nonce.equal lower upper
+        && is_accept { t with nonce = Ignore }
+
+  let deriver obj =
+    let open Fields_derivers_zkapps in
+    let ( !. ) = ( !. ) ~t_fields_annots in
+    let action_state =
+      needs_custom_js ~js_type:field ~name:"ActionState" field
+    in
+    Fields.make_creator obj ~balance:!.Numeric.Derivers.balance
+      ~nonce:!.Numeric.Derivers.nonce
+      ~receipt_chain_hash:!.(Or_ignore.deriver field)
+      ~delegate:!.(Or_ignore.deriver public_key)
+      ~state:!.(Zkapp_state.deriver @@ Or_ignore.deriver field)
+      ~action_state:!.(Or_ignore.deriver action_state)
+      ~proved_state:!.(Or_ignore.deriver bool)
+      ~is_new:!.(Or_ignore.deriver bool)
+      ~permissions:!.Permissions.deriver
+    |> finish "AccountPrecondition" ~t_toplevel_annots
+
+  let%test_unit "json roundtrip" =
+    let b = Balance.of_nanomina_int_exn 1000 in
+    let predicate : t =
+      { accept with
+        balance = Or_ignore.Check { Closed_interval.lower = b; upper = b }
+      ; action_state = Or_ignore.Check (Field.of_int 99)
+      ; proved_state = Or_ignore.Check true
+      }
+    in
+    let module Fd = Fields_derivers_zkapps.Derivers in
+    let full = deriver (Fd.o ()) in
+    [%test_eq: t] predicate (predicate |> Fd.to_json full |> Fd.of_json full)
+
+  let to_input
+      ({ balance
+       ; nonce
+       ; receipt_chain_hash
+       ; delegate
+       ; state
+       ; action_state
+       ; proved_state
+       ; is_new
+       ; permissions
+       } :
+        t ) =
+    let open Random_oracle_input.Chunked in
+    List.reduce_exn ~f:append
+      [ Numeric.(to_input Tc.balance balance)
+      ; Numeric.(to_input Tc.nonce nonce)
+      ; Hash.(to_input Tc.receipt_chain_hash receipt_chain_hash)
+      ; Eq_data.(to_input (Tc.public_key ()) delegate)
+      ; Vector.reduce_exn ~f:append
+          (Vector.map state ~f:Eq_data.(to_input Tc.field))
+      ; Eq_data.(to_input (Lazy.force Tc.action_state)) action_state
+      ; Eq_data.(to_input Tc.boolean) proved_state
+      ; Eq_data.(to_input Tc.boolean) is_new
+      ; Permissions.to_input permissions
+      ]
+
+  let digest t =
+    Random_oracle.(
+      hash ~init:Hash_prefix.zkapp_precondition_account
+        (pack_input (to_input t)))
+
+  module Checked = struct
+    type t =
+      { balance : Balance.var Numeric.Checked.t
+      ; nonce : Account_nonce.Checked.t Numeric.Checked.t
+      ; receipt_chain_hash : Receipt.Chain_hash.var Hash.Checked.t
+      ; delegate : Public_key.Compressed.var Eq_data.Checked.t
+      ; state : Field.Var.t Eq_data.Checked.t Zkapp_state.V.t
+      ; action_state : Field.Var.t Eq_data.Checked.t
+      ; proved_state : Boolean.var Eq_data.Checked.t
+      ; is_new : Boolean.var Eq_data.Checked.t
+      ; permissions : Permissions.Checked.t
+      }
+    [@@deriving hlist]
+
+    let to_input
+        ({ balance
+         ; nonce
+         ; receipt_chain_hash
+         ; delegate
+         ; state
+         ; action_state
+         ; proved_state
+         ; is_new
+         ; permissions
+         } :
+          t ) =
+      let open Random_oracle_input.Chunked in
+      List.reduce_exn ~f:append
+        [ Numeric.(Checked.to_input Tc.balance balance)
+        ; Numeric.(Checked.to_input Tc.nonce nonce)
+        ; Hash.(to_input_checked Tc.receipt_chain_hash receipt_chain_hash)
+        ; Eq_data.(to_input_checked (Tc.public_key ()) delegate)
+        ; Vector.reduce_exn ~f:append
+            (Vector.map state ~f:Eq_data.(to_input_checked Tc.field))
+        ; Eq_data.(to_input_checked (Lazy.force Tc.action_state)) action_state
+        ; Eq_data.(to_input_checked Tc.boolean) proved_state
+        ; Eq_data.(to_input_checked Tc.boolean) is_new
+        ; Permissions.Checked.to_input permissions
+        ]
+
+    open Impl
+
+    let checks ~new_account
+        { balance
+        ; nonce
+        ; receipt_chain_hash
+        ; delegate
+        ; state
+        ; action_state
+        ; proved_state
+        ; is_new
+        ; permissions
+        } (a : Account.Checked.Unhashed.t) =
+      [ ( Transaction_status.Failure.Account_balance_precondition_unsatisfied
+        , Numeric.(Checked.check Tc.balance balance a.balance) )
+      ; ( Transaction_status.Failure.Account_nonce_precondition_unsatisfied
+        , Numeric.(Checked.check Tc.nonce nonce a.nonce) )
+      ; ( Transaction_status.Failure
+          .Account_receipt_chain_hash_precondition_unsatisfied
+        , Eq_data.(
+            check_checked Tc.receipt_chain_hash receipt_chain_hash
+              a.receipt_chain_hash) )
+      ; ( Transaction_status.Failure.Account_delegate_precondition_unsatisfied
+        , Eq_data.(check_checked (Tc.public_key ()) delegate a.delegate) )
+      ]
+      @ [ ( Transaction_status.Failure
+            .Account_action_state_precondition_unsatisfied
+          , Boolean.any
+              Vector.(
+                to_list
+                  (map a.zkapp.action_state
+                     ~f:
+                       Eq_data.(
+                         check_checked (Lazy.force Tc.action_state) action_state) ))
+          )
+        ]
+      @ ( Vector.(
+            to_list
+              (map2 state a.zkapp.app_state ~f:Eq_data.(check_checked Tc.field)))
+        |> List.mapi ~f:(fun i check ->
+               let failure =
+                 Transaction_status.Failure
+                 .Account_app_state_precondition_unsatisfied
+                   i
+               in
+               (failure, check) ) )
+      @ [ ( Transaction_status.Failure
+            .Account_proved_state_precondition_unsatisfied
+          , Eq_data.(check_checked Tc.boolean proved_state a.zkapp.proved_state)
+          )
+        ]
+      @ [ ( Transaction_status.Failure.Account_is_new_precondition_unsatisfied
+          , Eq_data.(check_checked Tc.boolean is_new new_account) )
+        ]
+      @ Permissions.Checked.checks permissions a.permissions
+
+    let check ~new_account ~check t a =
+      List.iter
+        ~f:(fun (failure, passed) -> check failure passed)
+        (checks ~new_account t a)
+
+    let digest (t : t) =
+      Random_oracle.Checked.(
+        hash ~init:Hash_prefix.zkapp_precondition_account
+          (pack_input (to_input t)))
+  end
+
+  let typ () : (Checked.t, t) Typ.t =
+    let open Leaf_typs in
+    Typ.of_hlistable
+      [ balance
+      ; nonce
+      ; receipt_chain_hash
+      ; public_key ()
+      ; Zkapp_state.typ (Or_ignore.typ Field.typ ~ignore:Field.zero)
+      ; Or_ignore.typ Field.typ
+          ~ignore:Zkapp_account.Actions.empty_state_element
+      ; Or_ignore.typ Boolean.typ ~ignore:false
+      ; Or_ignore.typ Boolean.typ ~ignore:false
+      ; Permissions.typ ()
+      ]
+      ~var_to_hlist:Checked.to_hlist ~var_of_hlist:Checked.of_hlist
+      ~value_to_hlist:to_hlist ~value_of_hlist:of_hlist
+
+  let checks ~new_account
+      { balance
+      ; nonce
+      ; receipt_chain_hash
+      ; delegate
+      ; state
+      ; action_state
+      ; proved_state
+      ; is_new
+      ; permissions
+      } (a : Account.t) =
+    [ ( Transaction_status.Failure.Account_balance_precondition_unsatisfied
+      , Numeric.(check ~label:"balance" Tc.balance balance a.balance) )
+    ; ( Transaction_status.Failure.Account_nonce_precondition_unsatisfied
+      , Numeric.(check ~label:"nonce" Tc.nonce nonce a.nonce) )
+    ; ( Transaction_status.Failure
+        .Account_receipt_chain_hash_precondition_unsatisfied
+      , Eq_data.(
+          check ~label:"receipt_chain_hash" Tc.receipt_chain_hash
+            receipt_chain_hash a.receipt_chain_hash) )
+    ; ( Transaction_status.Failure.Account_delegate_precondition_unsatisfied
+      , let tc = Eq_data.Tc.public_key () in
+        Eq_data.(
+          check ~label:"delegate" tc delegate
+            (Option.value ~default:tc.default a.delegate)) )
+    ]
+    @
+    let zkapp = Option.value ~default:Zkapp_account.default a.zkapp in
+    [ ( Transaction_status.Failure.Account_action_state_precondition_unsatisfied
+      , match
+          List.find (Vector.to_list zkapp.action_state) ~f:(fun state ->
+              Eq_data.(
+                check (Lazy.force Tc.action_state) ~label:"" action_state state)
+              |> Or_error.is_ok )
+        with
+        | None ->
+            Error (Error.createf "Action state mismatch")
+        | Some _ ->
+            Ok () )
+    ]
+    @ List.mapi
+        Vector.(to_list (zip state zkapp.app_state))
+        ~f:(fun i (c, v) ->
+          let failure =
+            Transaction_status.Failure
+            .Account_app_state_precondition_unsatisfied
+              i
+          in
+          (failure, Eq_data.(check Tc.field ~label:(sprintf "state[%d]" i) c v))
+          )
+    @ [ ( Transaction_status.Failure
+          .Account_proved_state_precondition_unsatisfied
+        , Eq_data.(
+            check ~label:"proved_state" Tc.boolean proved_state
+              zkapp.proved_state) )
+      ]
+    @ [ ( Transaction_status.Failure.Account_is_new_precondition_unsatisfied
+        , Eq_data.(check ~label:"is_new" Tc.boolean is_new new_account) )
+      ]
+    @ Permissions.checks permissions a.permissions
+
+  let check ~new_account ~check t a =
+    List.iter
+      ~f:(fun (failure, res) -> check failure (Result.is_ok res))
+      (checks ~new_account t a)
 end
 
 module Protocol_state = struct

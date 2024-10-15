@@ -1027,6 +1027,14 @@ module Permissions_precondition = struct
 
   let gen : t Quickcheck.Generator.t = Zkapp_precondition.Permissions.gen
 
+  let accept : t = Zkapp_precondition.Permissions.accept
+
+  let from_perms : Permissions.t -> t =
+    Zkapp_precondition.Permissions.from_perms
+
+  let gen_valid : Permissions.t -> t Quickcheck.Generator.t =
+    Zkapp_precondition.Permissions.gen_valid
+
   module Tag = struct
     type t = Full | Nonce | Accept [@@deriving equal, compare, sexp, yojson]
   end
@@ -1064,7 +1072,6 @@ module Preconditions = struct
       type t = Mina_wire_types.Mina_base.Account_update.Preconditions.V1.t =
         { network : Zkapp_precondition.Protocol_state.Stable.V1.t
         ; account : Account_precondition.Stable.V1.t
-        ; permissions : Permissions_precondition.Stable.V1.t
         ; valid_while :
             Mina_numbers.Global_slot_since_genesis.Stable.V1.t
             Zkapp_precondition.Numeric.Stable.V1.t
@@ -1081,15 +1088,13 @@ module Preconditions = struct
     Fields.make_creator obj
       ~network:!.Zkapp_precondition.Protocol_state.deriver
       ~account:!.Account_precondition.deriver
-      ~permissions:!.Permissions_precondition.deriver
       ~valid_while:!.Zkapp_precondition.Valid_while.deriver
     |> finish "Preconditions" ~t_toplevel_annots
 
-  let to_input ({ network; account; valid_while; permissions } : t) =
+  let to_input ({ network; account; valid_while } : t) =
     List.reduce_exn ~f:Random_oracle_input.Chunked.append
       [ Zkapp_precondition.Protocol_state.to_input network
       ; Zkapp_precondition.Account.to_input account
-      ; Zkapp_precondition.Permissions.to_input permissions
       ; Zkapp_precondition.Valid_while.to_input valid_while
       ]
 
@@ -1097,9 +1102,8 @@ module Preconditions = struct
     let open Quickcheck.Generator.Let_syntax in
     let%map network = Zkapp_precondition.Protocol_state.gen
     and account = Account_precondition.gen
-    and permissions = Permissions_precondition.gen
     and valid_while = Zkapp_precondition.Valid_while.gen in
-    { network; account; valid_while; permissions }
+    { network; account; valid_while }
 
   module Checked = struct
     module Type_of_var (V : sig
@@ -1116,16 +1120,14 @@ module Preconditions = struct
     type t =
       { network : Zkapp_precondition.Protocol_state.Checked.t
       ; account : Account_precondition.Checked.t
-      ; permissions : Permissions_precondition.Checked.t
       ; valid_while : Zkapp_precondition.Valid_while.Checked.t
       }
     [@@deriving annot, hlist, fields]
 
-    let to_input ({ network; account; valid_while; permissions } : t) =
+    let to_input ({ network; account; valid_while } : t) =
       List.reduce_exn ~f:Random_oracle_input.Chunked.append
         [ Zkapp_precondition.Protocol_state.Checked.to_input network
         ; Zkapp_precondition.Account.Checked.to_input account
-        ; Zkapp_precondition.Permissions.Checked.to_input permissions
         ; Zkapp_precondition.Valid_while.Checked.to_input valid_while
         ]
   end
@@ -1134,8 +1136,6 @@ module Preconditions = struct
     Typ.of_hlistable
       [ Zkapp_precondition.Protocol_state.typ
       ; Account_precondition.typ ()
-      ; Permissions_precondition.typ ()
-        (* TODO why does account have the unit arg, do I need it too? *)
       ; Zkapp_precondition.Valid_while.typ
       ]
       ~var_to_hlist:Checked.to_hlist ~var_of_hlist:Checked.of_hlist
@@ -1144,7 +1144,6 @@ module Preconditions = struct
   let accept =
     { network = Zkapp_precondition.Protocol_state.accept
     ; account = Zkapp_precondition.Account.accept
-    ; permissions = Zkapp_precondition.Permissions.accept
     ; valid_while = Ignore
     }
 end
@@ -1431,7 +1430,6 @@ module Body = struct
                    }
              } )
         ; account = Zkapp_precondition.Account.nonce t.nonce
-        ; permissions = Zkapp_precondition.Permissions.accept
         ; valid_while = Ignore
         }
     ; use_full_commitment = true
@@ -1464,7 +1462,6 @@ module Body = struct
                    }
              } )
         ; account = Zkapp_precondition.Account.nonce t.nonce
-        ; permissions = Zkapp_precondition.Permissions.accept
         ; valid_while = Ignore
         }
     ; use_full_commitment = true

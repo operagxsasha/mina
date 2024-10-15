@@ -141,6 +141,9 @@ let gen_account_precondition_from_account ?failure
               in
               return (state, action_state, proved_state, is_new)
         in
+        let%bind permissions =
+          Account_update.Permissions_precondition.gen_valid account.permissions
+        in
         return
           { Zkapp_precondition.Account.balance
           ; nonce
@@ -150,6 +153,7 @@ let gen_account_precondition_from_account ?failure
           ; action_state
           ; proved_state
           ; is_new
+          ; permissions
           }
       in
       match failure with
@@ -644,7 +648,6 @@ module Account_update_body_components = struct
     ; preconditions =
         { Account_update.Preconditions.network = t.protocol_state_precondition
         ; account = t.account_precondition
-        ; permissions = t.permissions_precondition
         ; valid_while = t.valid_while_precondition
         }
     ; use_full_commitment = t.use_full_commitment

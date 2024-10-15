@@ -538,7 +538,6 @@ let make_zkapp_command_payment ~(sender : Keypair.t) ~(receiver : Keypair.t)
                     ; account =
                         Zkapp_precondition.Account.nonce
                           (Account.Nonce.succ nonce)
-                    ; permissions = Zkapp_precondition.Permissions.accept
                     ; valid_while = Ignore
                     }
                 ; may_use_token = No
@@ -561,7 +560,6 @@ let make_zkapp_command_payment ~(sender : Keypair.t) ~(receiver : Keypair.t)
                     { Account_update.Preconditions.network =
                         Zkapp_precondition.Protocol_state.accept
                     ; account = Zkapp_precondition.Account.accept
-                    ; permissions = Zkapp_precondition.Permissions.accept
                     ; valid_while = Ignore
                     }
                 ; may_use_token = No

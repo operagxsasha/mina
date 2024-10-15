@@ -2044,7 +2044,6 @@ let%test_module _ =
                      else sender_nonce
                    in
                    Zkapp_precondition.Account.nonce nonce )
-              ; permissions = Zkapp_precondition.Permissions.accept
               ; valid_while = Ignore
               }
         }
@@ -2376,8 +2375,8 @@ let%test_module _ =
     let%test_unit "invalid transactions are not accepted (zkapps)" =
       Thread_safe.block_on_async_exn (fun () ->
           let%bind test = setup_test () in
-          mk_zkapp_commands_single_block 7 test.txn_pool
-          >>= mk_invalid_test test )
+          let%bind commands = mk_zkapp_commands_single_block 7 test.txn_pool in
+          mk_invalid_test test commands )
 
     let current_global_slot () =
       let current_time = Block_time.now time_controller in
@@ -2907,7 +2906,6 @@ let%test_module _ =
             Account_update.Preconditions.
               { network = Zkapp_precondition.Protocol_state.accept
               ; account = Zkapp_precondition.Account.accept
-              ; permissions = Zkapp_precondition.Permissions.accept
               ; valid_while = Ignore
               }
       in

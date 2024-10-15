@@ -690,15 +690,6 @@ module Eff = struct
              ; local_state : 'local_state
              ; .. > )
            t
-    | Check_permissions_precondition :
-        'account_update * 'account * 'local_state
-        -> ( 'local_state
-           , < bool : 'bool
-             ; account_update : 'account_update
-             ; account : 'account
-             ; local_state : 'local_state
-             ; .. > )
-           t
     | Check_protocol_state_precondition :
         'protocol_state_pred * 'global_state
         -> ( 'bool
@@ -1276,9 +1267,6 @@ module Make (Inputs : Inputs_intf) = struct
       h.perform
         (Check_account_precondition
            (account_update, a, account_is_new, local_state) )
-    in
-    let local_state =
-      h.perform (Check_permissions_precondition (account_update, a, local_state))
     in
     let protocol_state_predicate_satisfied =
       h.perform

@@ -208,7 +208,6 @@ let%test_unit "ring-signature zkapp tx with 3 zkapp_command" =
                     ; account =
                         Zkapp_precondition.Account.nonce
                           (Account.Nonce.succ sender_nonce)
-                    ; permissions = Zkapp_precondition.Permissions.accept
                     ; valid_while = Ignore
                     }
                 ; may_use_token = No
@@ -234,7 +233,6 @@ let%test_unit "ring-signature zkapp tx with 3 zkapp_command" =
                     { Account_update.Preconditions.network =
                         Zkapp_precondition.Protocol_state.accept
                     ; account = Zkapp_precondition.Account.accept
-                    ; permissions = Zkapp_precondition.Permissions.accept
                     ; valid_while = Ignore
                     }
                 ; may_use_token = No

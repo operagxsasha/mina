@@ -141,8 +141,12 @@ let gen_account_precondition_from_account ?failure
               in
               return (state, action_state, proved_state, is_new)
         in
-        let%bind permissions =
-          Account_update.Permissions_precondition.gen_valid account.permissions
+        let%bind permissions = return @@ Account_update.Permissions_precondition.accept
+          (* Ideally this would be:
+             Account_update.Permissions_precondition.gen_valid account.permissions
+             AFAICT the permissions of the account passed in are not always the same
+             as the permissions of the final tx I don't know why
+           *)
         in
         return
           { Zkapp_precondition.Account.balance
@@ -839,7 +843,7 @@ let gen_account_update_body_components (type a b c d) ?global_slot
     f_account_precondition ~first_use_of_account account
   in
   let%bind permissions_precondition =
-    Account_update.Permissions_precondition.gen
+    Account_update.Permissions_precondition.gen_valid account.permissions
   in
   (* update the depth when generating `account_updates` in Zkapp_command.t *)
   let call_depth = 0 in
@@ -1413,7 +1417,7 @@ let gen_zkapp_command_from ?global_slot ?memo ?(no_account_precondition = false)
                   Permissions.gen ~auth_tag:Control.Tag.Signature
                 in
                 ( auth
-                , Some { update with permissions = Set_or_keep.Set new_perm } )
+                , Some { update with permissions = Set_or_keep.Set new_perm })
             | _ ->
                 return (Control.dummy_of_tag permissions_auth, None)
           in

@@ -954,6 +954,7 @@ module Account_precondition = struct
 
   [%%define_locally Stable.Latest.(equal, compare)]
 
+  let accept : t = Zkapp_precondition.Account.accept
   let gen : t Quickcheck.Generator.t =
     (* we used to have 3 constructors, Full, Nonce, and Accept for the type t
        nowadays, the generator creates these 3 different kinds of values, but all mapped to t
@@ -1024,8 +1025,6 @@ module Permissions_precondition = struct
   end]
 
   [%%define_locally Stable.Latest.(equal, compare)]
-
-  let gen : t Quickcheck.Generator.t = Zkapp_precondition.Permissions.gen
 
   let accept : t = Zkapp_precondition.Permissions.accept
 

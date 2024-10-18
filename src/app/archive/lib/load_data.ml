@@ -479,7 +479,7 @@ let get_account_update_body ~pool body_id =
               ; action_state_id
               ; proved_state
               ; is_new
-              ; permissions
+              ; permissions_id
               }
                : Processor.Zkapp_account_precondition.t ) =
       query_db ~f:(fun db ->
@@ -573,27 +573,28 @@ let get_account_update_body ~pool body_id =
     in
     let proved_state = Or_ignore.of_option proved_state in
     let is_new = Or_ignore.of_option is_new in
+    let%bind perms =
+      query_db ~f:(fun db ->
+          Processor.Zkapp_account_permissions_precondition.load db
+            permissions_id )
+    in
     let permissions : Account_update.Permissions_precondition.t =
-      { edit_state = Zkapp_basic.Or_ignore.of_option permissions.edit_state
-      ; send = Zkapp_basic.Or_ignore.of_option permissions.send
-      ; receive = Zkapp_basic.Or_ignore.of_option permissions.receive
-      ; access = Zkapp_basic.Or_ignore.of_option permissions.access
-      ; set_delegate = Zkapp_basic.Or_ignore.of_option permissions.set_delegate
-      ; set_permissions =
-          Zkapp_basic.Or_ignore.of_option permissions.set_permissions
+      { edit_state = Zkapp_basic.Or_ignore.of_option perms.edit_state
+      ; send = Zkapp_basic.Or_ignore.of_option perms.send
+      ; receive = Zkapp_basic.Or_ignore.of_option perms.receive
+      ; access = Zkapp_basic.Or_ignore.of_option perms.access
+      ; set_delegate = Zkapp_basic.Or_ignore.of_option perms.set_delegate
+      ; set_permissions = Zkapp_basic.Or_ignore.of_option perms.set_permissions
       ; set_verification_key =
-          Zkapp_basic.Or_ignore.of_option permissions.set_verification_key
-      ; set_zkapp_uri =
-          Zkapp_basic.Or_ignore.of_option permissions.set_zkapp_uri
+          Zkapp_basic.Or_ignore.of_option perms.set_verification_key
+      ; set_zkapp_uri = Zkapp_basic.Or_ignore.of_option perms.set_zkapp_uri
       ; edit_action_state =
-          Zkapp_basic.Or_ignore.of_option permissions.edit_action_state
+          Zkapp_basic.Or_ignore.of_option perms.edit_action_state
       ; set_token_symbol =
-          Zkapp_basic.Or_ignore.of_option permissions.set_token_symbol
-      ; increment_nonce =
-          Zkapp_basic.Or_ignore.of_option permissions.increment_nonce
-      ; set_voting_for =
-          Zkapp_basic.Or_ignore.of_option permissions.set_voting_for
-      ; set_timing = Zkapp_basic.Or_ignore.of_option permissions.set_timing
+          Zkapp_basic.Or_ignore.of_option perms.set_token_symbol
+      ; increment_nonce = Zkapp_basic.Or_ignore.of_option perms.increment_nonce
+      ; set_voting_for = Zkapp_basic.Or_ignore.of_option perms.set_voting_for
+      ; set_timing = Zkapp_basic.Or_ignore.of_option perms.set_timing
       }
     in
     return

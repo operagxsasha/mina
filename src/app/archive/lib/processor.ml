@@ -939,7 +939,7 @@ module Zkapp_nonce_bounds = struct
       id
 end
 
-module Zkapp_permissions_precondition = struct
+module Zkapp_account_permissions_precondition = struct
   type t =
     { edit_state : Permissions.Auth_required.t option
     ; access : Permissions.Auth_required.t option
@@ -956,6 +956,8 @@ module Zkapp_permissions_precondition = struct
     ; set_timing : Permissions.Auth_required.t option
     }
   [@@deriving fields, hlist]
+
+  let table_name = "Zkapp_account_permissions_precondition"
 
   let typ =
     Mina_caqti.Type_spec.custom_type ~to_hlist ~of_hlist
@@ -974,6 +976,38 @@ module Zkapp_permissions_precondition = struct
         ; option Zkapp_permissions.auth_required_typ
         ; option Zkapp_permissions.auth_required_typ
         ]
+
+  let add_if_doesn't_exist (module Conn : CONNECTION)
+      (perms : Zkapp_precondition.Permissions.t) =
+    let value : t =
+      { edit_state = Zkapp_basic.Or_ignore.to_option perms.edit_state
+      ; send = Zkapp_basic.Or_ignore.to_option perms.send
+      ; receive = Zkapp_basic.Or_ignore.to_option perms.receive
+      ; access = Zkapp_basic.Or_ignore.to_option perms.access
+      ; set_delegate = Zkapp_basic.Or_ignore.to_option perms.set_delegate
+      ; set_permissions = Zkapp_basic.Or_ignore.to_option perms.set_permissions
+      ; set_verification_key =
+          Zkapp_basic.Or_ignore.to_option perms.set_verification_key
+      ; set_zkapp_uri = Zkapp_basic.Or_ignore.to_option perms.set_zkapp_uri
+      ; edit_action_state =
+          Zkapp_basic.Or_ignore.to_option perms.edit_action_state
+      ; set_token_symbol =
+          Zkapp_basic.Or_ignore.to_option perms.set_token_symbol
+      ; increment_nonce = Zkapp_basic.Or_ignore.to_option perms.increment_nonce
+      ; set_voting_for = Zkapp_basic.Or_ignore.to_option perms.set_voting_for
+      ; set_timing = Zkapp_basic.Or_ignore.to_option perms.set_timing
+      }
+    in
+    Mina_caqti.select_insert_into_cols ~select:("id", Caqti_type.int)
+      ~table_name ~cols:(Fields.names, typ)
+      (module Conn)
+      value
+
+  let load (module Conn : CONNECTION) id =
+    Conn.find
+      (Caqti_request.find Caqti_type.int typ
+         (Mina_caqti.select_cols_from_id ~table_name ~cols:Fields.names) )
+      id
 end
 
 module Zkapp_account_precondition = struct
@@ -986,7 +1020,7 @@ module Zkapp_account_precondition = struct
     ; action_state_id : int option
     ; proved_state : bool option
     ; is_new : bool option
-    ; permissions : Zkapp_permissions_precondition.t
+    ; permissions_id : int
     }
   [@@deriving fields, hlist]
 
@@ -1001,7 +1035,7 @@ module Zkapp_account_precondition = struct
         ; option int
         ; option bool
         ; option bool
-        ; Zkapp_permissions_precondition.typ
+        ; int
         ]
 
   let table_name = "zkapp_account_precondition"
@@ -1039,29 +1073,10 @@ module Zkapp_account_precondition = struct
     in
     let proved_state = Zkapp_basic.Or_ignore.to_option acct.proved_state in
     let is_new = Zkapp_basic.Or_ignore.to_option acct.is_new in
-    let permissions : Zkapp_permissions_precondition.t =
-      { edit_state = Zkapp_basic.Or_ignore.to_option acct.permissions.edit_state
-      ; send = Zkapp_basic.Or_ignore.to_option acct.permissions.send
-      ; receive = Zkapp_basic.Or_ignore.to_option acct.permissions.receive
-      ; access = Zkapp_basic.Or_ignore.to_option acct.permissions.access
-      ; set_delegate =
-          Zkapp_basic.Or_ignore.to_option acct.permissions.set_delegate
-      ; set_permissions =
-          Zkapp_basic.Or_ignore.to_option acct.permissions.set_permissions
-      ; set_verification_key =
-          Zkapp_basic.Or_ignore.to_option acct.permissions.set_verification_key
-      ; set_zkapp_uri =
-          Zkapp_basic.Or_ignore.to_option acct.permissions.set_zkapp_uri
-      ; edit_action_state =
-          Zkapp_basic.Or_ignore.to_option acct.permissions.edit_action_state
-      ; set_token_symbol =
-          Zkapp_basic.Or_ignore.to_option acct.permissions.set_token_symbol
-      ; increment_nonce =
-          Zkapp_basic.Or_ignore.to_option acct.permissions.increment_nonce
-      ; set_voting_for =
-          Zkapp_basic.Or_ignore.to_option acct.permissions.set_voting_for
-      ; set_timing = Zkapp_basic.Or_ignore.to_option acct.permissions.set_timing
-      }
+    let%bind permissions_id =
+      (Zkapp_account_permissions_precondition.add_if_doesn't_exist
+         (module Conn) )
+        acct.permissions
     in
     let value =
       { balance_id
@@ -1072,7 +1087,7 @@ module Zkapp_account_precondition = struct
       ; action_state_id
       ; proved_state
       ; is_new
-      ; permissions
+      ; permissions_id
       }
     in
     Mina_caqti.select_insert_into_cols ~select:("id", Caqti_type.int)

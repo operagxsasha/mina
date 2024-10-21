@@ -51,7 +51,7 @@ sudo -u postgres pg_dump -U postgres -d archive > ./src/test/archive/sample_db/a
 # input file
 cp ~/.mina-network/mina-local-network-2-1-1/genesis_ledger.json .
 cat genesis_ledger.json | jq '.accounts' > _tmp.json
-echo '{ "genesis_ledger": { "accounts": '$(cat _tmp.json)' } }' | jq > input.json
+echo '{ "genesis_ledger": { "accounts": '$(cat _tmp.json)' } }' | jq > src/test/archive/sample_db/replayer_input_file.json
 
 
 ```

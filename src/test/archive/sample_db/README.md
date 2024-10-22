@@ -36,7 +36,7 @@ Disclaimer: I'm a nix user and has already setup nix on my machine
 ```
 nix develop mina
 
-dune build src/app/cli/src/mina.exe src/app/archive/archive.exe src/app/zkapp_test_transaction/zkapp_test_transaction.exe src/app/logproc/logproc.exe
+DUNE_PROFILE=devnet dune build src/app/cli/src/mina.exe src/app/archive/archive.exe src/app/zkapp_test_transaction/zkapp_test_transaction.exe src/app/logproc/logproc.exe
 
 psql -c 'CREATE DATABASE archive'
 psql archive < ./src/app/archive/create_schema.sql

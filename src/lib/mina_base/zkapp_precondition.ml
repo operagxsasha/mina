@@ -564,56 +564,9 @@ module Permissions = struct
       ; set_timing
       }
 
-  let gen : t Quickcheck.Generator.t =
-    let open Quickcheck.Let_syntax in
-    let auth_required = Permissions.Auth_required.gen in
-    let%bind edit_state = Or_ignore.gen auth_required in
-    let%bind access = Or_ignore.gen auth_required in
-    let%bind send = Or_ignore.gen auth_required in
-    let%bind receive = Or_ignore.gen auth_required in
-    let%bind set_delegate = Or_ignore.gen auth_required in
-    let%bind set_permissions = Or_ignore.gen auth_required in
-    let%bind set_verification_key = Or_ignore.gen auth_required in
-    let%bind set_zkapp_uri = Or_ignore.gen auth_required in
-    let%bind edit_action_state = Or_ignore.gen auth_required in
-    let%bind set_token_symbol = Or_ignore.gen auth_required in
-    let%bind increment_nonce = Or_ignore.gen auth_required in
-    let%bind set_voting_for = Or_ignore.gen auth_required in
-    let%bind set_timing = Or_ignore.gen auth_required in
-    return
-      { edit_state
-      ; access
-      ; send
-      ; receive
-      ; set_delegate
-      ; set_permissions
-      ; set_verification_key
-      ; set_zkapp_uri
-      ; edit_action_state
-      ; set_token_symbol
-      ; increment_nonce
-      ; set_voting_for
-      ; set_timing
-      }
-
-  (*
-  let nonce (n : Permissions.Nonce.t) =
-    let nonce : _ Numeric.t = Check { lower = n; upper = n } in
-    { accept with nonce }
-
-  let is_nonce (t : t) =
-    match t.nonce with
-    | Ignore ->
-        false
-    | Check { lower; upper } ->
-        (* nonce is exact, all other fields are Ignore *)
-        Mina_numbers.Account_nonce.equal lower upper
-        && is_accept { t with nonce = Ignore }
-  *)
-
   let deriver obj =
     let open Fields_derivers_zkapps in
-    (* TODO coppied from Permissions because I can't get the type right to expose it *)
+    (* TODO copied from Permissions because I can't get the type right to expose it *)
     let auth_required =
       Fields_derivers_zkapps.Derivers.iso_string ~name:"AuthRequired"
         ~js_type:(Custom "AuthRequired") ~doc:"Kind of authorization required"
@@ -636,21 +589,6 @@ module Permissions = struct
       ~set_voting_for:!.(Or_ignore.deriver auth_required)
       ~set_timing:!.(Or_ignore.deriver auth_required)
     |> finish "PermissionsPrecondition" ~t_toplevel_annots
-
-  (*
-  let%test_unit "json roundtrip" =
-    let b = Balance.of_nanomina_int_exn 1000 in
-    let predicate : t =
-      { accept with
-        balance = Or_ignore.Check { Closed_interval.lower = b; upper = b }
-      ; action_state = Or_ignore.Check (Field.of_int 99)
-      ; proved_state = Or_ignore.Check true
-      }
-    in
-    let module Fd = Fields_derivers_zkapps.Derivers in
-    let full = deriver (Fd.o ()) in
-    [%test_eq: t] predicate (predicate |> Fd.to_json full |> Fd.of_json full)
-    *)
 
   let to_input
       ({ edit_state
@@ -948,8 +886,7 @@ module Account = struct
       Or_ignore.gen field_gen
     in
     let%bind proved_state = Or_ignore.gen Quickcheck.Generator.bool in
-    let%bind permissions = Permissions.gen in
-    (* TODO gen_valid here? *)
+    let permissions = Permissions.accept in
     let%map is_new = Or_ignore.gen Quickcheck.Generator.bool in
     { balance
     ; nonce

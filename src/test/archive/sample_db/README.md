@@ -46,7 +46,7 @@ echo "\\password postgres" | psql archive
 ./scripts/mina-local-network/mina-local-network.sh -a -r -pu postgres -ppw postgres -zt -vt
 
 # archive_db.sql
-sudo -u postgres pg_dump -U postgres -d archive > ./src/test/archive/sample_db/archive_db.sql
+pg_dump -U postgres -d archive > ./src/test/archive/sample_db/archive_db.sql
 
 # input file
 cp ~/.mina-network/mina-local-network-2-1-1/genesis_ledger.json .

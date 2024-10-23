@@ -1,4 +1,5 @@
 {
+  "target_epoch_ledgers_state_hash" : "3NLaMamCKzFQoWicxgKTm4UT4Fp5Bn9JVuk8d9i9Rccis7YJHuBS",
   "genesis_ledger": {
     "accounts": [
       {

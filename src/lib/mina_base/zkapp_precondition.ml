@@ -566,13 +566,7 @@ module Permissions = struct
 
   let deriver obj =
     let open Fields_derivers_zkapps in
-    (* TODO copied from Permissions because I can't get the type right to expose it *)
-    let auth_required =
-      Fields_derivers_zkapps.Derivers.iso_string ~name:"AuthRequired"
-        ~js_type:(Custom "AuthRequired") ~doc:"Kind of authorization required"
-        ~to_string:Permissions.Auth_required.to_string
-        ~of_string:Permissions.Auth_required.of_string
-    in
+    let auth_required = Permissions.auth_required () in
     let ( !. ) = ( !. ) ~t_fields_annots in
     Fields.make_creator obj
       ~edit_state:!.(Or_ignore.deriver auth_required)

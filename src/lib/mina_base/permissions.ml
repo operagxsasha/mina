@@ -609,7 +609,7 @@ let empty : t =
 
 (* deriving-fields-related stuff *)
 
-let auth_required =
+let auth_required () =
   Fields_derivers_zkapps.Derivers.iso_string ~name:"AuthRequired"
     ~js_type:(Custom "AuthRequired") ~doc:"Kind of authorization required"
     ~to_string:Auth_required.to_string ~of_string:Auth_required.of_string
@@ -624,7 +624,7 @@ module As_record = struct
     let transaction_version =
       needs_custom_js ~js_type:uint32 ~name:"TransactionVersion" uint32
     in
-    Fields.make_creator obj ~auth:!.auth_required
+    Fields.make_creator obj ~auth:!.(auth_required ())
       ~txn_version:!.transaction_version
     |> finish "VerificationKeyPermission" ~t_toplevel_annots
 end
@@ -635,6 +635,7 @@ let of_record { As_record.auth; txn_version } = (auth, txn_version)
 
 let deriver obj =
   let open Fields_derivers_zkapps.Derivers in
+  let auth_required = auth_required () in
   let ( !. ) = ( !. ) ~t_fields_annots:Poly.t_fields_annots in
   Poly.Fields.make_creator obj ~edit_state:!.auth_required ~send:!.auth_required
     ~receive:!.auth_required ~set_delegate:!.auth_required

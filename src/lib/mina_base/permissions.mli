@@ -117,6 +117,29 @@ val user_default : t
 
 val empty : t
 
+val auth_required : unit ->
+  (< contramap : (Auth_required.t -> Yojson.Safe.t) ref;
+     graphql_arg : (unit ->
+                    Yojson.Safe.t Fields_derivers_graphql.Schema.Arg.arg_typ)
+                   ref;
+     graphql_fields : Yojson.Safe.t
+                      Fields_derivers_graphql.Graphql.Fields.Input.T.t ref;
+     graphql_query : string option ref;
+     js_layout : [> `Assoc of (string * Yojson.Safe.t) list ] ref;
+     map : (Yojson.Safe.t -> Auth_required.t) ref;
+     nullable_graphql_arg : (unit ->
+                             Yojson.Safe.t option
+                             Fields_derivers_graphql.Schema.Arg.arg_typ)
+                            ref;
+     nullable_graphql_fields : Yojson.Safe.t option
+                               Fields_derivers_graphql.Graphql.Fields.Input.T.t
+                               ref;
+     of_json : (Yojson.Safe.t -> Yojson.Safe.t) ref; skip : bool ref;
+     to_json : (Yojson.Safe.t -> Yojson.Safe.t) ref; .. >
+   as 'a)
+  Fields_derivers_zkapps.Unified_input.t Fields_derivers_zkapps.Unified_input.t ->
+  'a Fields_derivers_zkapps.Unified_input.t
+
 val deriver :
      (< contramap : (t -> t) ref
       ; graphql_arg : (unit -> t Fields_derivers_graphql.Schema.Arg.arg_typ) ref

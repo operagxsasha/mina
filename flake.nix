@@ -305,7 +305,17 @@
 
         # Packages for the development environment that are not needed to build mina-dev.
         # For instance dependencies for tests.
-        devShellPackages = with pkgs; [ rosetta-cli wasm-pack nodejs binaryen ];
+        devShellPackages = with pkgs;
+          [ rosetta-cli
+            wasm-pack
+            nodejs
+            binaryen
+            (pkgs.python3.withPackages (python-pkgs: [
+                python-pkgs.click
+                python-pkgs.requests
+              ]))
+              pkgs.jq
+          ];
       in {
         inherit ocamlPackages;
 
@@ -333,14 +343,7 @@
 
         # Pure dev shell, from which you can build Mina yourself manually, or hack on it.
         devShell = ocamlPackages.mina-dev.overrideAttrs (oa: {
-          buildInputs = oa.buildInputs ++ devShellPackages ++
-            [ (pkgs.python3.withPackages (python-pkgs: [
-                python-pkgs.click
-                python-pkgs.requests
-              ]))
-              pkgs.jq
-            ]
-            ;
+          buildInputs = oa.buildInputs ++ devShellPackages;
           shellHook = ''
             ${oa.shellHook}
             unset MINA_COMMIT_DATE MINA_COMMIT_SHA1 MINA_BRANCH

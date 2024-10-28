@@ -624,7 +624,8 @@ module As_record = struct
     let transaction_version =
       needs_custom_js ~js_type:uint32 ~name:"TransactionVersion" uint32
     in
-    Fields.make_creator obj ~auth:!.(auth_required ())
+    Fields.make_creator obj
+      ~auth:!.(auth_required ())
       ~txn_version:!.transaction_version
     |> finish "VerificationKeyPermission" ~t_toplevel_annots
 end

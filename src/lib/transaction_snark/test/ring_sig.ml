@@ -12,6 +12,9 @@ module Statement = Transaction_snark.Statement
 open Snark_params.Tick
 open Snark_params.Tick.Let_syntax
 
+
+module PicklesProof = Pickles.Proof.Make (Nat.N0) (Nat.N0)
+
 (* check a signature on msg against a public key *)
 let check_sig pk msg sigma : Boolean.var Checked.t =
   let%bind (module S) = Inner_curve.Checked.Shifted.create () in
@@ -117,11 +120,20 @@ let%test_unit "ring-signature zkapp tx with 3 zkapp_command" =
     (ring_member_sks, sign_index, test_spec)
   in
   (* set to true to print vk, zkapp_command *)
-  let debug_mode : bool = false in
+  let debug_mode : bool = true in
   Quickcheck.test ~trials:1 gen
     ~f:(fun (ring_member_sks, sign_index, { init_ledger; specs }) ->
       let ring_member_pks =
         List.map ring_member_sks ~f:Inner_curve.(scale one)
+      in
+      let () = ring_member_pks
+        |> List.map
+            ~f:(fun x ->
+            Inner_curve.sexp_of_t x
+              |> Sexp.to_string
+              |> printf "signature:\n%s\n\n"
+            )
+        |> const ()
       in
       Ledger.with_ledger ~depth:ledger_depth ~f:(fun ledger ->
           Init_ledger.init (module Ledger.Ledger_inner) init_ledger ledger ;
@@ -274,11 +286,11 @@ let%test_unit "ring-signature zkapp tx with 3 zkapp_command" =
             | _ ->
                 respond Unhandled
           in
-          let (), (), (pi : _ Pickles.Proof.t) =
+          let (), (), (pi_1 : _ Pickles.Proof.t) =
             (fun () -> ringsig_prover ~handler tx_statement)
             |> Async.Thread_safe.block_on_async_exn
           in
-          let pi = Pickles.Side_loaded.Proof.of_proof pi in
+          let pi = Pickles.Side_loaded.Proof.of_proof pi_1 in
           let fee_payer =
             let txn_comm =
               Zkapp_command.Transaction_commitment.create_complete transaction
@@ -319,6 +331,22 @@ let%test_unit "ring-signature zkapp tx with 3 zkapp_command" =
             Account_update.Fee_payer.to_yojson fee_payer
             |> Yojson.Safe.pretty_to_string
             |> printf "fee_payer:\n%s\n\n"
+            |> fun () ->
+            Zkapp_statement.to_yojson tx_statement
+            |> Yojson.Safe.pretty_to_string
+            |> printf "statement:\n%s\n\n"
+            |> fun () ->
+            Schnorr.Chunked.Signature.sexp_of_t sigma
+            |> Sexp.to_string
+            |> printf "sigma:\n%s\n\n"
+            |> fun () ->
+            PicklesProof.to_yojson pi_1
+            |> Yojson.Safe.pretty_to_string
+            |> printf "pi_1:\n%s\n\n"
+            |> fun () ->
+            Pickles.Side_loaded.Proof.to_yojson pi
+            |> Yojson.Safe.pretty_to_string
+            |> printf "pi:\n%s\n\n"
             |> fun () ->
             (* print other_account_update data *)
             Zkapp_command.Call_forest.iteri zkapp_command.account_updates

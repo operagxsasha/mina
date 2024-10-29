@@ -11,8 +11,6 @@ module Zkapp_command_segment = Transaction_snark.Zkapp_command_segment
 module Statement = Transaction_snark.Statement
 open Snark_params.Tick
 open Snark_params.Tick.Let_syntax
-
-
 module PicklesProof = Pickles.Proof.Make (Nat.N0) (Nat.N0)
 
 (* check a signature on msg against a public key *)
@@ -126,13 +124,11 @@ let%test_unit "ring-signature zkapp tx with 3 zkapp_command" =
       let ring_member_pks =
         List.map ring_member_sks ~f:Inner_curve.(scale one)
       in
-      let () = ring_member_pks
-        |> List.map
-            ~f:(fun x ->
-            Inner_curve.sexp_of_t x
-              |> Sexp.to_string
-              |> printf "signature:\n%s\n\n"
-            )
+      let () =
+        ring_member_pks
+        |> List.map ~f:(fun x ->
+               Inner_curve.sexp_of_t x |> Sexp.to_string
+               |> printf "signature:\n%s\n\n" )
         |> const ()
       in
       Ledger.with_ledger ~depth:ledger_depth ~f:(fun ledger ->
@@ -337,16 +333,13 @@ let%test_unit "ring-signature zkapp tx with 3 zkapp_command" =
             |> printf "statement:\n%s\n\n"
             |> fun () ->
             Schnorr.Chunked.Signature.sexp_of_t sigma
-            |> Sexp.to_string
-            |> printf "sigma:\n%s\n\n"
+            |> Sexp.to_string |> printf "sigma:\n%s\n\n"
             |> fun () ->
             PicklesProof.to_yojson pi_1
-            |> Yojson.Safe.pretty_to_string
-            |> printf "pi_1:\n%s\n\n"
+            |> Yojson.Safe.pretty_to_string |> printf "pi_1:\n%s\n\n"
             |> fun () ->
             Pickles.Side_loaded.Proof.to_yojson pi
-            |> Yojson.Safe.pretty_to_string
-            |> printf "pi:\n%s\n\n"
+            |> Yojson.Safe.pretty_to_string |> printf "pi:\n%s\n\n"
             |> fun () ->
             (* print other_account_update data *)
             Zkapp_command.Call_forest.iteri zkapp_command.account_updates

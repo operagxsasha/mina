@@ -43,7 +43,7 @@ psql archive < ./src/app/archive/create_schema.sql
 # set the password to postgres or change the `-ppw` option to agree with what you chose
 echo "\\password postgres" | psql archive
 
-./scripts/mina-local-network/mina-local-network.sh -a -r -pu postgres -ppw postgres -zt -vt
+DUNE_PROFILE=devnet ./scripts/mina-local-network/mina-local-network.sh -a -r -pu postgres -ppw postgres -zt -vt
 
 # archive_db.sql
 pg_dump -U postgres -d archive > ./src/test/archive/sample_db/archive_db.sql
@@ -78,7 +78,7 @@ a) We can alter input config and use `target_epoch_ledgers_state_hash` property 
 b) Convert pending chain to canonical blocks using helper script:
 
 `
-`./src/test/archive/sample_db/convert_chain_to_canonical.sh postgres://postgres:postgres@localhost:5432/archive '3NKuDnsHub3gqef1rGrrJ7K3h3dq6RXpHKUMZ5ke28fbg7dgbWba'`
+`./src/test/archive/sample_db/convert_chain_to_canonical.sh postgres://postgres:postgres@localhost:5432/archive`
 
 As a result archive database will now have blocks which are a part of chain from genesis block to target block converted to canonical. All blocks which are not a part of mentioned chain and have height smaller than target blocks will be orphaned. Rest will be left intact as pending. DO NOT USE on production.
 

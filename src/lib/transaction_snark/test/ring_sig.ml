@@ -328,6 +328,42 @@ let%test_unit "ring-signature zkapp tx with 3 zkapp_command" =
             |> Yojson.Safe.pretty_to_string
             |> printf "fee_payer:\n%s\n\n"
             |> fun () ->
+            Account_update.Simple.to_yojson sender
+            |> Yojson.Safe.pretty_to_string
+            |> printf "sender:\n%s\n\n"
+            |> fun () ->
+            Genesis_constants.Constraint_constants.to_yojson constraint_constants
+            |> Yojson.Safe.pretty_to_string
+            |> printf "constraint_constants:\n%s\n\n"
+            |> fun () ->
+            Zkapp_command.to_yojson zkapp_command
+            |> Yojson.Safe.pretty_to_string
+            |> printf "zkapp_command:\n%s\n\n"
+            |> fun () ->
+            Zkapp_command.Transaction_commitment.sexp_of_t transaction
+            |> Sexp.to_string |> Base64.encode_exn
+            |> printf "forest:\n%s\n\n"
+            |> fun () ->
+            Private_key.to_yojson signing_sk
+            |> Yojson.Safe.pretty_to_string
+            |> printf "signing_sk:\n%s\n\n"
+            |> fun () ->
+            Account_update.Simple.to_yojson snapp_account_update_data
+            |> Yojson.Safe.pretty_to_string
+            |> printf "snap au:\n%s\n\n"
+            |> fun () ->
+            Account_update.Simple.to_yojson sender_account_update_data
+            |> Yojson.Safe.pretty_to_string
+            |> printf "sender au:\n%s\n\n"
+            |> fun () ->
+            Zkapp_command.Call_forest.With_hashes.to_yojson ps
+            |> Yojson.Safe.pretty_to_string
+            |> printf "call forest:\n%s\n\n"
+            |> fun () ->
+            Zkapp_command.Digest.Forest.to_yojson account_updates_hash
+            |> Yojson.Safe.pretty_to_string
+            |> printf "account_updates_hash:\n%s\n\n"
+            |> fun () ->
             Zkapp_statement.to_yojson tx_statement
             |> Yojson.Safe.pretty_to_string
             |> printf "statement:\n%s\n\n"

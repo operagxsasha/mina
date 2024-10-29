@@ -146,9 +146,11 @@ let%test_unit "ring-signature zkapp tx with 3 zkapp_command" =
               ~choices:(fun ~self:_ -> [ ring_sig_rule ring_member_pks ])
           in
           let vk = Pickles.Side_loaded.Verification_key.of_compiled tag in
-          let vk = Async.Thread_safe.block_on_async_exn (fun () -> vk) in
+          let vk_1 = Async.Thread_safe.block_on_async_exn (fun () -> vk) in
           ( if debug_mode then
-            Binable.to_string (module Side_loaded_verification_key.Stable.V2) vk
+            Binable.to_string
+              (module Side_loaded_verification_key.Stable.V2)
+              vk_1
             |> Base64.encode_exn ~alphabet:Base64.uri_safe_alphabet
             |> printf "vk:\n%s\n\n" )
           |> fun () ->
@@ -161,7 +163,7 @@ let%test_unit "ring-signature zkapp tx with 3 zkapp_command" =
             spec
           in
           let fee = Amount.of_string "1000000" in
-          let vk = With_hash.of_data ~hash_data:Zkapp_account.digest_vk vk in
+          let vk = With_hash.of_data ~hash_data:Zkapp_account.digest_vk vk_1 in
           let total = Option.value_exn (Amount.add fee amount) in
           (let _is_new, _loc =
              let pk = Public_key.compress sender.public_key in
@@ -286,6 +288,16 @@ let%test_unit "ring-signature zkapp tx with 3 zkapp_command" =
             (fun () -> ringsig_prover ~handler tx_statement)
             |> Async.Thread_safe.block_on_async_exn
           in
+          let (), (), (pi_2 : _ Pickles.Proof.t) =
+            (fun () -> ringsig_prover ~handler tx_statement)
+            |> Async.Thread_safe.block_on_async_exn
+          in
+          let () =
+            assert (
+              Yojson.Safe.equal
+                (PicklesProof.to_yojson pi_1)
+                (PicklesProof.to_yojson pi_2) )
+          in
           let pi = Pickles.Side_loaded.Proof.of_proof pi_1 in
           let fee_payer =
             let txn_comm =
@@ -324,15 +336,18 @@ let%test_unit "ring-signature zkapp tx with 3 zkapp_command" =
           in
           ( if debug_mode then
             (* print fee payer *)
+            Side_loaded_verification_key.to_yojson vk_1
+            |> Yojson.Safe.pretty_to_string |> printf "vk:\n%s\n\n"
+            |> fun () ->
             Account_update.Fee_payer.to_yojson fee_payer
             |> Yojson.Safe.pretty_to_string
             |> printf "fee_payer:\n%s\n\n"
             |> fun () ->
             Account_update.Simple.to_yojson sender
-            |> Yojson.Safe.pretty_to_string
-            |> printf "sender:\n%s\n\n"
+            |> Yojson.Safe.pretty_to_string |> printf "sender:\n%s\n\n"
             |> fun () ->
-            Genesis_constants.Constraint_constants.to_yojson constraint_constants
+            Genesis_constants.Constraint_constants.to_yojson
+              constraint_constants
             |> Yojson.Safe.pretty_to_string
             |> printf "constraint_constants:\n%s\n\n"
             |> fun () ->
@@ -341,16 +356,14 @@ let%test_unit "ring-signature zkapp tx with 3 zkapp_command" =
             |> printf "zkapp_command:\n%s\n\n"
             |> fun () ->
             Zkapp_command.Transaction_commitment.sexp_of_t transaction
-            |> Sexp.to_string |> Base64.encode_exn
-            |> printf "forest:\n%s\n\n"
+            |> Sexp.to_string |> Base64.encode_exn |> printf "forest:\n%s\n\n"
             |> fun () ->
             Private_key.to_yojson signing_sk
             |> Yojson.Safe.pretty_to_string
             |> printf "signing_sk:\n%s\n\n"
             |> fun () ->
             Account_update.Simple.to_yojson snapp_account_update_data
-            |> Yojson.Safe.pretty_to_string
-            |> printf "snap au:\n%s\n\n"
+            |> Yojson.Safe.pretty_to_string |> printf "snap au:\n%s\n\n"
             |> fun () ->
             Account_update.Simple.to_yojson sender_account_update_data
             |> Yojson.Safe.pretty_to_string

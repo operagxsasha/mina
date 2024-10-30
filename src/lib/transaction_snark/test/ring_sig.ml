@@ -335,10 +335,19 @@ let%test_unit "ring-signature zkapp tx with 3 zkapp_command" =
               }
           in
           ( if debug_mode then
-            (* print fee payer *)
+            Account.Key.to_yojson sender_pk
+            |> Yojson.Safe.pretty_to_string |> printf "sender_pk:\n%s\n\n"
+            |> fun () ->
+            Amount.to_yojson total
+            |> Yojson.Safe.pretty_to_string |> printf "total:\n%s\n\n"
+            |> fun () ->
+            Amount.to_yojson total
+            |> Yojson.Safe.pretty_to_string |> printf "total:\n%s\n\n"
+            |> fun () ->
             Side_loaded_verification_key.to_yojson vk_1
             |> Yojson.Safe.pretty_to_string |> printf "vk:\n%s\n\n"
             |> fun () ->
+            (* print fee payer *)
             Account_update.Fee_payer.to_yojson fee_payer
             |> Yojson.Safe.pretty_to_string
             |> printf "fee_payer:\n%s\n\n"
@@ -381,6 +390,10 @@ let%test_unit "ring-signature zkapp tx with 3 zkapp_command" =
             |> Yojson.Safe.pretty_to_string
             |> printf "statement:\n%s\n\n"
             |> fun () ->
+            Private_key.to_yojson signing_sk
+            |> Yojson.Safe.pretty_to_string
+            |> printf "signing_sk:\n%s\n\n"
+            |> fun () ->
             Schnorr.Chunked.Signature.sexp_of_t sigma
             |> Sexp.to_string |> printf "sigma:\n%s\n\n"
             |> fun () ->
@@ -389,6 +402,12 @@ let%test_unit "ring-signature zkapp tx with 3 zkapp_command" =
             |> fun () ->
             Pickles.Side_loaded.Proof.to_yojson pi
             |> Yojson.Safe.pretty_to_string |> printf "pi:\n%s\n\n"
+            |> fun () ->
+            Zkapp_command.Call_forest.iteri zkapp_command.account_updates
+              ~f:(fun idx (p : Account_update.t) ->
+                Account_update.Permissions_precondition.to_yojson p.body.preconditions.account.permissions
+                |> Yojson.Safe.pretty_to_string
+                |> printf "new preconditions #%d body:\n%s\n\n" idx )
             |> fun () ->
             (* print other_account_update data *)
             Zkapp_command.Call_forest.iteri zkapp_command.account_updates

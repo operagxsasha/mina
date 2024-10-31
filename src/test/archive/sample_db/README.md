@@ -65,11 +65,15 @@ pg_dump -U postgres -d archive > ./src/test/archive/sample_db/archive_db.sql
 
 # input file
 cp ~/.mina-network/mina-local-network-2-1-1/genesis_ledger.json _tmp1.json
-cat genesis_ledger.json | jq '.accounts' > _tmp2.json
-echo '{ "genesis_ledger": { "accounts": '$(cat _tmp.json)' } }' | jq > _tmp3.json
+cat _tmp1.json | jq '.accounts' > _tmp2.json
+echo '{ "genesis_ledger": { "accounts": '$(cat _tmp2.json)' } }' | jq > _tmp3.json
 NEW_HASH=$(psql archive -t -c  'SELECT state_hash from blocks where global_slot_since_genesis = (SELECT MAX(global_slot_since_genesis) from blocks)' | sed 's/^ *//')
 cat _tmp3.json | jq '.+{"target_epoch_ledgers_state_hash": "'$NEW_HASH'"}' > ./src/test/archive/sample_db/replayer_input_file.json
 rm _tmp*.json
+
+# genesis_ledger
+cat src/test/archive/sample_db/genesis.json | jq --arg ledger "$(cat ~/.mina-network/mina-local-network-2-1-1/genesis_ledger.json | jq -c)"  > _tmp.json
+mv _tmp.json src/test/archive/sample_db/genesis.json
 
 
 ```

@@ -33,7 +33,7 @@ After we are satisfied with data generation process. We can dump archive data an
 
 Disclaimer: I'm a nix user and has already setup nix on my machine
 
-```
+```bash
 nix develop mina
 
 DUNE_PROFILE=devnet dune build src/app/cli/src/mina.exe src/app/archive/archive.exe src/app/zkapp_test_transaction/zkapp_test_transaction.exe src/app/logproc/logproc.exe
@@ -43,15 +43,33 @@ psql archive < ./src/app/archive/create_schema.sql
 # set the password to postgres or change the `-ppw` option to agree with what you chose
 echo "\\password postgres" | psql archive
 
-DUNE_PROFILE=devnet ./scripts/mina-local-network/mina-local-network.sh -a -r -pu postgres -ppw postgres -zt -vt
+DUNE_PROFILE=devnet ./scripts/mina-local-network/mina-local-network.sh -a -r -pu postgres -ppw postgres -zt -vt -lp
+# This script will run forever
+# In a seperate terminal run
+watch 'psql archive -t -c  "select MAX(global_slot_since_genesis) from blocks"'
+# This will tell you the current height of the chain
+# You can stop the script when it's at least 10
+
+# at this point you probably want to run this script to make the blocks canonical
+./src/test/archive/sample_db/convert_chain_to_canonical.sh postgres://postgres:postgres@localhost:5432/archive
+
+# replace precomputed_blocks.zip with whole mess
+find ~/.mina-network -name 'precomputed_blocks.log' | xargs -I ! ./scripts/mina-local-network/split_precomputed_log.sh ! precomputed_blocks
+rm ./src/test/archive/sample_db/precomputed_blocks.zip
+zip -r ./src/test/archive/sample_db/precomputed_blocks.zip precomputed_blocks
+rm -rf precomputed_blocks
+
 
 # archive_db.sql
 pg_dump -U postgres -d archive > ./src/test/archive/sample_db/archive_db.sql
 
 # input file
-cp ~/.mina-network/mina-local-network-2-1-1/genesis_ledger.json .
-cat genesis_ledger.json | jq '.accounts' > _tmp.json
-echo '{ "genesis_ledger": { "accounts": '$(cat _tmp.json)' } }' | jq > src/test/archive/sample_db/replayer_input_file.json
+cp ~/.mina-network/mina-local-network-2-1-1/genesis_ledger.json _tmp1.json
+cat genesis_ledger.json | jq '.accounts' > _tmp2.json
+echo '{ "genesis_ledger": { "accounts": '$(cat _tmp.json)' } }' | jq > _tmp3.json
+NEW_HASH=$(psql archive -t -c  'SELECT state_hash from blocks where global_slot_since_genesis = (SELECT MAX(global_slot_since_genesis) from blocks)' | sed 's/^ *//')
+cat _tmp3.json | jq '.+{"target_epoch_ledgers_state_hash": "'$NEW_HASH'"}' > ./src/test/archive/sample_db/replayer_input_file.json
+rm _tmp*.json
 
 
 ```

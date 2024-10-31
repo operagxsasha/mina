@@ -132,6 +132,8 @@ let%test_unit "ring-signature zkapp tx with 3 zkapp_command" =
         |> const ()
       in
       Ledger.with_ledger ~depth:ledger_depth ~f:(fun ledger ->
+          Ledger.sexp_of_t ledger |> Sexp.to_string
+          |> printf "ledger_imediate:\n%s\n\n" ;
           Init_ledger.init (module Ledger.Ledger_inner) init_ledger ledger ;
           let spec = List.hd_exn specs in
           let tag, _, (module P), Pickles.Provers.[ ringsig_prover ] =
@@ -336,13 +338,14 @@ let%test_unit "ring-signature zkapp tx with 3 zkapp_command" =
           in
           ( if debug_mode then
             Account.Key.to_yojson sender_pk
-            |> Yojson.Safe.pretty_to_string |> printf "sender_pk:\n%s\n\n"
+            |> Yojson.Safe.pretty_to_string
+            |> printf "sender_pk:\n%s\n\n"
             |> fun () ->
-            Amount.to_yojson total
-            |> Yojson.Safe.pretty_to_string |> printf "total:\n%s\n\n"
+            Amount.to_yojson total |> Yojson.Safe.pretty_to_string
+            |> printf "total:\n%s\n\n"
             |> fun () ->
-            Amount.to_yojson total
-            |> Yojson.Safe.pretty_to_string |> printf "total:\n%s\n\n"
+            Amount.to_yojson total |> Yojson.Safe.pretty_to_string
+            |> printf "total:\n%s\n\n"
             |> fun () ->
             Side_loaded_verification_key.to_yojson vk_1
             |> Yojson.Safe.pretty_to_string |> printf "vk:\n%s\n\n"
@@ -366,10 +369,6 @@ let%test_unit "ring-signature zkapp tx with 3 zkapp_command" =
             |> fun () ->
             Zkapp_command.Transaction_commitment.sexp_of_t transaction
             |> Sexp.to_string |> Base64.encode_exn |> printf "forest:\n%s\n\n"
-            |> fun () ->
-            Private_key.to_yojson signing_sk
-            |> Yojson.Safe.pretty_to_string
-            |> printf "signing_sk:\n%s\n\n"
             |> fun () ->
             Account_update.Simple.to_yojson snapp_account_update_data
             |> Yojson.Safe.pretty_to_string |> printf "snap au:\n%s\n\n"
@@ -400,12 +399,34 @@ let%test_unit "ring-signature zkapp tx with 3 zkapp_command" =
             PicklesProof.to_yojson pi_1
             |> Yojson.Safe.pretty_to_string |> printf "pi_1:\n%s\n\n"
             |> fun () ->
+            Ledger.sexp_of_t ledger
+            |> Sexp.pp_hum (Format.formatter_of_out_channel stdout)
+            |> fun () ->
+            Init_ledger.sexp_of_t init_ledger
+            |> Sexp.to_string
+            |> printf "init_ledger:\n%s\n\n"
+            |> fun () ->
             Pickles.Side_loaded.Proof.to_yojson pi
             |> Yojson.Safe.pretty_to_string |> printf "pi:\n%s\n\n"
             |> fun () ->
+            List.iteri
+              ~f:(fun idx ring_member ->
+                Inner_curve.sexp_of_t ring_member
+                |> Sexp.to_string |> Base64.encode_exn
+                |> printf "ring_member_pk %d:\n %s\n\n" idx )
+              ring_member_pks
+            |> fun () ->
+            List.iteri
+              ~f:(fun idx ring_member ->
+                Private_key.sexp_of_t ring_member
+                |> Sexp.to_string |> Base64.encode_exn
+                |> printf "ring_member_sk %d:\n %s\n\n" idx )
+              ring_member_sks
+            |> fun () ->
             Zkapp_command.Call_forest.iteri zkapp_command.account_updates
               ~f:(fun idx (p : Account_update.t) ->
-                Account_update.Permissions_precondition.to_yojson p.body.preconditions.account.permissions
+                Account_update.Permissions_precondition.to_yojson
+                  p.body.preconditions.account.permissions
                 |> Yojson.Safe.pretty_to_string
                 |> printf "new preconditions #%d body:\n%s\n\n" idx )
             |> fun () ->

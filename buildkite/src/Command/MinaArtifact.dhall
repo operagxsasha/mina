@@ -304,7 +304,7 @@ let pipelineBuilder
             , dirtyWhen = DebianVersions.dirtyWhen spec.debVersion
             , path = "Release"
             , name =
-                "${spec.prefix}${Network.capitalName spec.network}${DebianVersions.capitalName
+                "${spec.prefix}${DebianVersions.capitalName
                                    spec.debVersion}${Profiles.toSuffixUppercase
                                                        spec.profile}${BuildFlags.toSuffixUppercase
                                                                         spec.buildFlags}"

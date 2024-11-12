@@ -1,5 +1,6 @@
 open Core_kernel
 open Mina_base
+open Lmdb_storage
 
 module Entry = struct
   [%%versioned

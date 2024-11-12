@@ -1,6 +1,6 @@
 (library
- (name lmdb_storage)
- (public_name lmdb_storage)
+ (name lmdb_block_storage)
+ (public_name lmdb_block_storage)
  (libraries
    ;; opam libraries
    async
@@ -21,11 +21,11 @@
    base.caml
    base.base_internalhash_types
    splittable_random
-   lmdb
    integers
    ppx_version.runtime
    ;; local libraries
    blake2
+   lmdb_storage
    error_json
    child_processes
    file_system
@@ -35,7 +35,13 @@
    timeout_lib
    mina_metrics
    o1trace
+   staged_ledger_diff
    consensus
+   mina_net2
+   mina_base
+   transition_frontier_base
+   mina_block
+   transition_frontier_full_frontier
    mina_numbers
    data_hash_lib
    ;; test deps

@@ -82,6 +82,7 @@
 (package (name libp2p_ipc))
 (package (name linked_tree))
 (package (name lmdb_storage))
+(package (name lmdb_block_storage))
 (package (name logger))
 (package (name logproc_lib))
 (package (name merkle_address))

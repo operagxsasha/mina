@@ -1,6 +1,7 @@
 (* Only show stdout for failed inline tests. *)
 open Inline_test_quiet_logs
 open Core_kernel
+open Lmdb_storage
 
 module F (Db : Generic.Db) = struct
   type holder =

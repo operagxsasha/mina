@@ -247,7 +247,7 @@ build_functional_test_suite_deb() {
   cp ./default/src/test/archive/archive_node_tests/archive_node_tests.exe "${BUILDDIR}/usr/local/bin/mina-archive-node-test"
 
   mkdir -p ${BUILDDIR}/etc/mina/test/archive/sample_db
-  rsync -Huav ../src/test/archive/sample_db* "${BUILDDIR}/etc/mina/test/archive/sample_db"
+  rsync -Huav ../src/test/archive/sample_db* "${BUILDDIR}/etc/mina/test/archive"
 
   build_deb mina-test-suite
 

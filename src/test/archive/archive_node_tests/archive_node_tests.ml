@@ -3,13 +3,14 @@ open Core
 open Mina_automation
 
 (**
- * Test the basic functionality of the mina daemon and client through the CLI
+ * Test the basic functionality of the mina archive with mocked deamon
  *)
 
+(* asserts count of archive blocked (we are skipping genesis block) *)
 let assert_archived_blocks ~archive_uri ~expected =
   let connection = Psql.Conn_str archive_uri in
   let%bind actual_blocks_count =
-    Psql.run_command ~connection "Select count(*) from blocks"
+    Psql.run_command ~connection "Select count(*) from blocks where height > 1"
   in
   let actual_blocks_count =
     actual_blocks_count |> String.strip |> Int.of_string

@@ -38,9 +38,6 @@ module Features : sig
     val none_bool : bool t
   end
 
-  [%%versioned:
-  module Stable : sig
-    module V1 : sig
       type 'bool t =
             'bool Mina_wire_types.Pickles_types.Plonk_types.Features.V1.t =
         { range_check0 : 'bool
@@ -53,8 +50,6 @@ module Features : sig
         ; runtime_tables : 'bool
         }
       [@@deriving sexp, compare, yojson, hash, equal, hlist]
-    end
-  end]
 
   val to_full :
        or_:('bool -> 'bool -> 'bool)
@@ -110,11 +105,6 @@ module Poly_comm : sig
   end
 end
 
-(** The number of wires in the proving system *)
-module Columns_vec = Vector.Vector_15
-
-module Columns = Nat.N15
-
 (** The number of wires that are considered in the permutation argument *)
 module Permuts = Nat.N7
 
@@ -127,7 +117,8 @@ module Lookup_sorted = Nat.N5
 module Lookup_sorted_vec = Vector.Vector_5
 
 (** Messages involved in the polynomial IOP *)
-module Messages : sig
+module Messages(_ : Nat.Intf) : sig
+  module Columns_vec : Vector.S
   module Poly : sig
     type ('w, 'z, 't) t = { w : 'w; z : 'z; t : 't }
   end
@@ -136,14 +127,6 @@ module Messages : sig
   https://o1-labs.github.io/proof-systems/rfcs/extended-lookup-tables.html} RFC4
   - Extended lookup tables } in the kimchi book *)
   module Lookup : sig
-    module Stable : sig
-      module V1 : sig
-        type 'g t =
-              'g Mina_wire_types.Pickles_types.Plonk_types.Messages.Lookup.V1.t =
-          { sorted : 'g array; aggreg : 'g; runtime : 'g option }
-        [@@deriving fields, sexp, compare, yojson, hash, equal, hlist]
-      end
-    end
 
     type 'g t =
       { sorted : 'g Lookup_sorted_minus_1_vec.t
@@ -158,26 +141,6 @@ module Messages : sig
         ; sorted_5th_column : ('g, 'bool) Opt.t
         ; aggreg : 'g
         ; runtime : ('g, 'bool) Opt.t
-        }
-    end
-  end
-
-  module Stable : sig
-    module V2 : sig
-      (** Commitments to the different polynomials.
-          - [w_comm] is a vector containing the commitments to the wires. As
-            usual, the vector size is encoded at the type level using
-            {!Columns_vec} for compile time verification of vector properties.
-          - [z_comm] is the commitment to the permutation polynomial
-          - [t_comm] is the commitment to the quotient polynomial
-          - [lookup] contains the commitments to the polynomials involved the
-            lookup arguments.
-      *)
-      type 'g t = 'g Mina_wire_types.Pickles_types.Plonk_types.Messages.V2.t =
-        { w_comm : 'g Poly_comm.Without_degree_bound.t Columns_vec.t
-        ; z_comm : 'g Poly_comm.Without_degree_bound.t
-        ; t_comm : 'g Poly_comm.Without_degree_bound.t
-        ; lookup : 'g Poly_comm.Without_degree_bound.t Lookup.Stable.V1.t option
         }
     end
   end
@@ -221,7 +184,8 @@ module Messages : sig
        Kimchi_pasta_snarky_backend.Wrap_impl.Typ.t
 end
 
-module Evals : sig
+module Evals(_ : Nat.Intf) : sig
+  module Columns_vec : Vector.S
   module In_circuit : sig
     type ('f, 'bool) t =
       { w : 'f Columns_vec.t
@@ -273,7 +237,7 @@ module Evals : sig
       -> unit
   end
 
-  type 'a t = 'a Mina_wire_types.Pickles_types.Plonk_types.Evals.V2.t =
+  type 'a t =
     { w : 'a Columns_vec.t
     ; coefficients : 'a Columns_vec.t
     ; z : 'a
@@ -320,16 +284,9 @@ module Evals : sig
   val to_absorption_sequence : 'a t -> 'a list
 end
 
-module Openings : sig
+module Openings(N_cols : Nat.Intf) : sig
   module Bulletproof : sig
-    [%%versioned:
-    module Stable : sig
-      module V1 : sig
         type ('g, 'fq) t =
-              ( 'g
-              , 'fq )
-              Mina_wire_types.Pickles_types.Plonk_types.Openings.Bulletproof.V1
-              .t =
           { lr : ('g * 'g) array
           ; z_1 : 'fq
           ; z_2 : 'fq
@@ -337,8 +294,6 @@ module Openings : sig
           ; challenge_polynomial_commitment : 'g
           }
         [@@deriving compare, sexp, yojson, hash, equal]
-      end
-    end]
 
     val typ :
          ('a, 'b) Kimchi_pasta_snarky_backend.Step_impl.Typ.t
@@ -353,78 +308,37 @@ module Openings : sig
       -> (('d, 'a) t, ('e, 'b) t) Kimchi_pasta_snarky_backend.Wrap_impl.Typ.t
   end
 
-  module Stable : sig
-    module V2 : sig
       type ('g, 'fq, 'fqv) t =
-            ( 'g
-            , 'fq
-            , 'fqv )
-            Mina_wire_types.Pickles_types.Plonk_types.Openings.V2.t =
         { proof : ('g, 'fq) Bulletproof.t
-        ; evals : ('fqv * 'fqv) Evals.t
+        ; evals : ('fqv * 'fqv) Evals(N_cols).t
         ; ft_eval1 : 'fq
         }
-    end
-  end
 
-  type ('a, 'b, 'c) t = ('a, 'b, 'c) Stable.V2.t
 end
 
-module Proof : sig
-  module Stable : sig
-    module V2 : sig
-      type ('g, 'fq, 'fqv) t =
-            ('g, 'fq, 'fqv) Mina_wire_types.Pickles_types.Plonk_types.Proof.V2.t =
-        { messages : 'g Messages.Stable.V2.t
-        ; openings : ('g, 'fq, 'fqv) Openings.t
-        }
-
-      include Sigs.Full.S3 with type ('a, 'b, 'c) t := ('a, 'b, 'c) t
-    end
-
-    module Latest = V2
-  end
+module Proof(N_cols : Nat.Intf) : sig
 
   (** Represents a proof. A proof consists of messages and openings from the
       polynomial protocols *)
   type ('a, 'b, 'c) t =
-    { messages : 'a Messages.t; openings : ('a, 'b, 'c) Openings.t }
+    { messages : 'a Messages(N_cols).t; openings : ('a, 'b, 'c) Openings(N_cols).t }
   [@@deriving compare, sexp, yojson, hash, equal]
 end
 
-module All_evals : sig
+module All_evals(N_cols : Nat.Intf) : sig
   module With_public_input : sig
     type ('f, 'f_multi) t =
-          ( 'f
-          , 'f_multi )
-          Mina_wire_types.Pickles_types.Plonk_types.All_evals.With_public_input
-          .V1
-          .t =
-      { public_input : 'f; evals : 'f_multi Evals.t }
+      { public_input : 'f; evals : 'f_multi Evals(N_cols).t }
 
     module In_circuit : sig
       type ('f, 'f_multi, 'bool) t =
-        { public_input : 'f; evals : ('f_multi, 'bool) Evals.In_circuit.t }
+        { public_input : 'f; evals : ('f_multi, 'bool) Evals(N_cols).In_circuit.t }
 
       val factor :
            ('f * 'f, 'f_multi * 'f_multi, 'bool) t
         -> ('f, 'f_multi, 'bool) t Tuple_lib.Double.t
     end
   end
-
-  module Stable : sig
-    module V1 : sig
-      type ('f, 'f_multi) t =
-        { evals : ('f * 'f, 'f_multi * 'f_multi) With_public_input.t
-        ; ft_eval1 : 'f
-        }
-
-      include Sigs.Full.S2 with type ('a, 'b) t := ('a, 'b) t
-    end
-
-    module Latest = V1
-  end
-
   module In_circuit : sig
     type ('f, 'f_multi, 'bool) t =
       { evals :
@@ -437,7 +351,6 @@ module All_evals : sig
   end
 
   type ('f, 'f_multi) t =
-        ('f, 'f_multi) Mina_wire_types.Pickles_types.Plonk_types.All_evals.V1.t =
     { evals : ('f_multi * 'f_multi, 'f_multi * 'f_multi) With_public_input.t
     ; ft_eval1 : 'f
     }

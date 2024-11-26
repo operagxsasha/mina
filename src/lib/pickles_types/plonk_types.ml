@@ -22,8 +22,6 @@ let wrap_padded_array_typ ~length ~dummy elt =
 
 let hash_fold_array f s x = hash_fold_list f s (Array.to_list x)
 
-module Columns = Nat.N15
-module Columns_vec = Vector.Vector_15
 module Permuts_minus_1 = Nat.N6
 module Permuts_minus_1_vec = Vector.Vector_6
 module Permuts = Nat.N7
@@ -482,13 +480,11 @@ module Features = struct
     }
 end
 
-module Evals = struct
-  [%%versioned
-  module Stable = struct
-    module V2 = struct
-      type 'a t = 'a Mina_wire_types.Pickles_types.Plonk_types.Evals.V2.t =
-        { w : 'a Columns_vec.Stable.V1.t
-        ; coefficients : 'a Columns_vec.Stable.V1.t
+module Evals(N_cols : Nat.Intf) = struct
+  module Columns_vec =  Vector.With_length(N_cols)
+      type 'a t = 
+        { w : 'a Columns_vec.t
+        ; coefficients : 'a Columns_vec.t
         ; z : 'a
         ; s : 'a Permuts_minus_1_vec.Stable.V1.t
         ; generic_selector : 'a
@@ -514,8 +510,6 @@ module Evals = struct
         ; foreign_field_mul_lookup_selector : 'a option
         }
       [@@deriving fields, sexp, compare, yojson, hash, equal, hlist]
-    end
-  end]
 
   (* NB: Equivalent checks are run in-circuit below. *)
   let validate_feature_flags ~feature_flags:(f : bool Features.t)
@@ -1203,8 +1197,8 @@ module Evals = struct
         ]
     in
     Typ.of_hlistable
-      [ Vector.typ e Columns.n
-      ; Vector.typ e Columns.n
+      [ Vector.typ e N_cols.n
+      ; Vector.typ e N_cols.n
       ; e
       ; Vector.typ e Permuts_minus_1.n
       ; e
@@ -1251,8 +1245,8 @@ module Evals = struct
         ]
     in
     Typ.of_hlistable
-      [ Vector.wrap_typ e Columns.n
-      ; Vector.wrap_typ e Columns.n
+      [ Vector.wrap_typ e N_cols.n
+      ; Vector.wrap_typ e N_cols.n
       ; e
       ; Vector.wrap_typ e Permuts_minus_1.n
       ; e
@@ -1281,22 +1275,12 @@ module Evals = struct
       ~value_to_hlist:to_hlist ~value_of_hlist:of_hlist
 end
 
-module All_evals = struct
+module All_evals(N_cols : Nat.Intf) = struct
+  module Evals = Evals(N_cols)
   module With_public_input = struct
-    [%%versioned
-    module Stable = struct
-      module V1 = struct
         type ('f, 'f_multi) t =
-              ( 'f
-              , 'f_multi )
-              Mina_wire_types.Pickles_types.Plonk_types.All_evals
-              .With_public_input
-              .V1
-              .t =
-          { public_input : 'f; evals : 'f_multi Evals.Stable.V2.t }
+          { public_input : 'f; evals : 'f_multi Evals.t }
         [@@deriving sexp, compare, yojson, hash, equal, hlist]
-      end
-    end]
 
     module In_circuit = struct
       type ('f, 'f_multi, 'bool) t =
@@ -1331,21 +1315,7 @@ module All_evals = struct
 
   [@@@warning "-4"]
 
-  [%%versioned
-  module Stable = struct
-    [@@@no_toplevel_latest_type]
-
-    module V1 = struct
-      type ('f, 'f_multi) t =
-        { evals : ('f * 'f, 'f_multi * 'f_multi) With_public_input.Stable.V1.t
-        ; ft_eval1 : 'f
-        }
-      [@@deriving sexp, compare, yojson, hash, equal, hlist]
-    end
-  end]
-
   type ('f, 'f_multi) t =
-        ('f, 'f_multi) Mina_wire_types.Pickles_types.Plonk_types.All_evals.V1.t =
     { evals : ('f_multi * 'f_multi, 'f_multi * 'f_multi) With_public_input.t
     ; ft_eval1 : 'f
     }
@@ -1399,18 +1369,11 @@ module All_evals = struct
       ~value_of_hlist:of_hlist
 end
 
-module Openings = struct
+module Openings(N_cols : Nat.Intf) = struct
   [@@@warning "-4"] (* Deals with the 2 sexp-deriving types below *)
 
   module Bulletproof = struct
-    [%%versioned
-    module Stable = struct
-      module V1 = struct
         type ('g, 'fq) t =
-              ( 'g
-              , 'fq )
-              Mina_wire_types.Pickles_types.Plonk_types.Openings.Bulletproof.V1
-              .t =
           { lr : ('g * 'g) Bounded_types.ArrayN16.Stable.V1.t
           ; z_1 : 'fq
           ; z_2 : 'fq
@@ -1418,8 +1381,6 @@ module Openings = struct
           ; challenge_polynomial_commitment : 'g
           }
         [@@deriving sexp, compare, yojson, hash, equal, hlist]
-      end
-    end]
 
     let typ fq g ~length =
       let open Step_impl.Typ in
@@ -1435,36 +1396,23 @@ module Openings = struct
         ~var_to_hlist:to_hlist ~var_of_hlist:of_hlist ~value_to_hlist:to_hlist
         ~value_of_hlist:of_hlist
   end
+  module Evals = Evals(N_cols)
 
-  [%%versioned
-  module Stable = struct
-    module V2 = struct
       type ('g, 'fq, 'fqv) t =
-            ( 'g
-            , 'fq
-            , 'fqv )
-            Mina_wire_types.Pickles_types.Plonk_types.Openings.V2.t =
-        { proof : ('g, 'fq) Bulletproof.Stable.V1.t
-        ; evals : ('fqv * 'fqv) Evals.Stable.V2.t
+        { proof : ('g, 'fq) Bulletproof.t
+        ; evals : ('fqv * 'fqv) Evals.t
         ; ft_eval1 : 'fq
         }
       [@@deriving sexp, compare, yojson, hash, equal, hlist]
-    end
-  end]
 end
 
 module Poly_comm = struct
   module With_degree_bound = struct
-    [%%versioned
-    module Stable = struct
-      module V1 = struct
         type 'g_opt t =
           { unshifted : 'g_opt Bounded_types.ArrayN16.Stable.V1.t
           ; shifted : 'g_opt
           }
         [@@deriving sexp, compare, yojson, hlist, hash, equal]
-      end
-    end]
 
     let padded_array_typ0 = padded_array_typ
 
@@ -1508,17 +1456,14 @@ module Poly_comm = struct
   end
 
   module Without_degree_bound = struct
-    [%%versioned
-    module Stable = struct
-      module V1 = struct
         type 'g t = 'g Bounded_types.ArrayN16.Stable.V1.t
         [@@deriving sexp, compare, yojson, hash, equal]
-      end
-    end]
   end
 end
 
-module Messages = struct
+module Messages(N_cols : Nat.Intf) = struct
+  module Columns = N_cols
+  module Columns_vec = Vector.With_length(N_cols)
   open Poly_comm
 
   module Poly = struct
@@ -1527,20 +1472,6 @@ module Messages = struct
   end
 
   module Lookup = struct
-    [%%versioned
-    module Stable = struct
-      [@@@no_toplevel_latest_type]
-
-      module V1 = struct
-        type 'g t =
-              'g Mina_wire_types.Pickles_types.Plonk_types.Messages.Lookup.V1.t =
-          { sorted : 'g Bounded_types.ArrayN16.Stable.V1.t
-          ; aggreg : 'g
-          ; runtime : 'g option
-          }
-        [@@deriving fields, sexp, compare, yojson, hash, equal, hlist]
-      end
-    end]
 
     type 'g t =
       { sorted : 'g Lookup_sorted_minus_1_vec.t
@@ -1599,20 +1530,6 @@ module Messages = struct
         (wrap_typ ~lookups_per_row_4 ~runtime_tables ~dummy:z elt)
   end
 
-  [%%versioned
-  module Stable = struct
-    [@@@no_toplevel_latest_type]
-
-    module V2 = struct
-      type 'g t = 'g Mina_wire_types.Pickles_types.Plonk_types.Messages.V2.t =
-        { w_comm : 'g Without_degree_bound.Stable.V1.t Columns_vec.Stable.V1.t
-        ; z_comm : 'g Without_degree_bound.Stable.V1.t
-        ; t_comm : 'g Without_degree_bound.Stable.V1.t
-        ; lookup : 'g Without_degree_bound.Stable.V1.t Lookup.Stable.V1.t option
-        }
-      [@@deriving sexp, compare, yojson, fields, hash, equal, hlist]
-    end
-  end]
 
   type 'g t =
     { w_comm : 'g Without_degree_bound.t Columns_vec.t
@@ -1682,20 +1599,9 @@ module Messages = struct
       ~value_to_hlist:to_hlist ~value_of_hlist:of_hlist
 end
 
-module Proof = struct
-  [%%versioned
-  module Stable = struct
-    [@@@no_toplevel_latest_type]
-
-    module V2 = struct
-      type ('g, 'fq, 'fqv) t =
-            ('g, 'fq, 'fqv) Mina_wire_types.Pickles_types.Plonk_types.Proof.V2.t =
-        { messages : 'g Messages.Stable.V2.t
-        ; openings : ('g, 'fq, 'fqv) Openings.Stable.V2.t
-        }
-      [@@deriving sexp, compare, yojson, hash, equal]
-    end
-  end]
+module Proof(N_cols : Nat.Intf) = struct
+  module Messages = Messages(N_cols)
+  module Openings = Openings(N_cols)
 
   type ('g, 'fq, 'fqv) t =
     { messages : 'g Messages.t; openings : ('g, 'fq, 'fqv) Openings.t }
@@ -1703,13 +1609,6 @@ module Proof = struct
 end
 
 module Shifts = struct
-  open Core_kernel
-
-  [%%versioned
-  module Stable = struct
-    module V2 = struct
       type 'field t = 'field Bounded_types.ArrayN16.Stable.V1.t
       [@@deriving sexp, compare, yojson, equal]
-    end
-  end]
 end

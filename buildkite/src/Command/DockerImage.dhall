@@ -99,8 +99,8 @@ let generateStep =
                       ++  " --deb-build-flags ${BuildFlags.lowerName
                                                   spec.build_flags}"
 
-                else  "echo \"Docker won't be published due to setting ${DockerPublish.show
-                                                                           spec.docker_publish}\""
+                else  "echo Docker won't be published due to setting ${DockerPublish.show
+                                                                           spec.docker_publish}"
 
           let commands =
                 merge

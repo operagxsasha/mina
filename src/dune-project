@@ -72,6 +72,7 @@
 (package (name key_gen))
 (package (name key_value_database))
 (package (name kimchi_backend))
+(package (name kimchi_backend_types))
 (package (name kimchi_backend_common))
 (package (name kimchi_pasta_snarky_backend))
 (package (name kimchi_bindings))

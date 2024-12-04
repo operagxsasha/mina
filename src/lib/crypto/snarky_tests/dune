@@ -12,7 +12,6 @@
    ppx_compare
    ppx_deriving_yojson
    h_list.ppx))
- (forbidden_libraries pickles)
  (libraries
   ;; opam libraries
   alcotest
@@ -30,7 +29,7 @@
   async_kernel
   bin_prot.shape
   ;; local libraries
-  ;; mina_wire_types
+  mina_wire_types
   kimchi_bindings
   kimchi_types
   pasta_bindings
@@ -40,25 +39,25 @@
   kimchi_pasta.constraint_system
   bitstring_lib
   snarky.intf
-  ;; pickles.backend
-  kimchi_backend_types
+  pickles.backend
+  pickles_types
   snarky.backendless
   snarky_group_map
   sponge
-  ;;pickles
-  ;;pickles.pseudo
-  ;;pickles.limb_vector
-  ;;pickles_base
+  pickles
+  pickles.pseudo
+  pickles.limb_vector
+  pickles_base
   base58_check
   codable
   random_oracle_input
-  ;;pickles.composition_types
-  ;;pickles.plonk_checks
-  ;;pickles_base.one_hot_vector
+  pickles.composition_types
+  pickles.plonk_checks
+  pickles_base.one_hot_vector
   snarky_log
   group_map
   snarky_curve
-  ;; key_cache
+  key_cache
   snark_keys_header
   tuple_lib
   promise
@@ -66,8 +65,8 @@
   ppx_version.runtime
   qcheck-core
   qcheck-alcotest
-  ;;blockchain_snark
-  ;; transaction_snark
+  blockchain_snark
+  transaction_snark
   genesis_constants
-  ;;mina_runtime_config
+  mina_runtime_config
   core))

@@ -1,5 +1,5 @@
 open Backend
-open Pickles_types
+open Kimchi_backend_types
 open Import
 module Impl = Impls.Step
 module One_hot_vector = One_hot_vector.Make (Impl)
@@ -60,7 +60,7 @@ type ('app_state, 'max_proofs_verified, 'num_branches) t =
       ( challenge
       , scalar_challenge
       , Impl.Field.t Shifted_value.Type1.t
-      , ( Impl.Field.t Pickles_types.Shifted_value.Type1.t
+      , ( Impl.Field.t Kimchi_backend_types.Shifted_value.Type1.t
         , Impl.Boolean.var )
         Opt.t
       , (scalar_challenge, Impl.Boolean.var) Opt.t
@@ -82,7 +82,7 @@ type ('app_state, 'max_proofs_verified, 'num_branches) t =
       ( Impl.Field.t
       , Impl.Field.t array
       , Impl.Boolean.var )
-      Plonk_types.All_evals.In_circuit.t
+      Kimchi_backend_common.Plonk_types.All_evals.In_circuit.t
         (** The evaluations from the step proof that this proof wraps *)
   ; prev_challenges :
       ((Impl.Field.t, Tick.Rounds.n) Vector.t, 'max_proofs_verified) Vector.t
@@ -121,7 +121,7 @@ module Constant = struct
         , Branch_data.t )
         Types.Wrap.Proof_state.In_circuit.t
     ; prev_proof_evals :
-        (Tick.Field.t, Tick.Field.t array) Plonk_types.All_evals.t
+        (Tick.Field.t, Tick.Field.t array) Kimchi_backend_common.Plonk_types.All_evals.t
     ; prev_challenges :
         ((Tick.Field.t, Tick.Rounds.n) Vector.t, 'max_proofs_verified) Vector.t
     ; prev_challenge_polynomial_commitments :
@@ -150,7 +150,7 @@ let typ (type n avar aval) ~feature_flags ~num_chunks
         (Shifted_value.Type1.typ Field.typ)
         Impls.Step.Typ.unit Digest.typ
         (Branch_data.typ ~assert_16_bits:(Step_verifier.assert_n_bits ~n:16))
-    ; Plonk_types.All_evals.typ ~num_chunks
+    ; Kimchi_backend_common.Plonk_types.All_evals.typ ~num_chunks
         (* Assume we have lookup iff we have runtime tables *)
         feature_flags
     ; Vector.typ (Vector.typ Field.typ Tick.Rounds.n) max_proofs_verified

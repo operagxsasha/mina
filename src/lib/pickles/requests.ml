@@ -1,6 +1,6 @@
 open Import
 open Types
-open Pickles_types
+open Kimchi_backend_types
 open Hlist
 open Snarky_backendless.Request
 open Backend
@@ -16,7 +16,7 @@ module Wrap = struct
 
     type _ t +=
       | Evals :
-          ( (Field.Constant.t, Field.Constant.t array) Plonk_types.All_evals.t
+          ( (Field.Constant.t, Field.Constant.t array) Kimchi_backend_common.Plonk_types.All_evals.t
           , max_proofs_verified )
           Vector.t
           t
@@ -39,11 +39,11 @@ module Wrap = struct
           , Digest.Constant.t )
           Types.Step.Proof_state.t
           t
-      | Messages : Tock.Inner_curve.Affine.t Plonk_types.Messages.t t
+      | Messages : Tock.Inner_curve.Affine.t Kimchi_backend_common.Plonk_types.Messages.t t
       | Openings_proof :
           ( Tock.Inner_curve.Affine.t
           , Tick.Field.t )
-          Plonk_types.Openings.Bulletproof.t
+          Kimchi_backend_common.Plonk_types.Openings.Bulletproof.t
           t
       | Wrap_domain_indices : (Field.Constant.t, max_proofs_verified) Vector.t t
   end
@@ -66,7 +66,7 @@ module Wrap = struct
 
       type _ t +=
         | Evals :
-            (Tock.Field.t, Tock.Field.t array) Plonk_types.All_evals.t vec t
+            (Tock.Field.t, Tock.Field.t array) Kimchi_backend_common.Plonk_types.All_evals.t vec t
         | Which_branch : int t
         | Step_accs : Tock.Inner_curve.Affine.t vec t
         | Old_bulletproof_challenges :
@@ -87,11 +87,11 @@ module Wrap = struct
             , Digest.Constant.t )
             Types.Step.Proof_state.t
             t
-        | Messages : Tock.Inner_curve.Affine.t Plonk_types.Messages.t t
+        | Messages : Tock.Inner_curve.Affine.t Kimchi_backend_common.Plonk_types.Messages.t t
         | Openings_proof :
             ( Tock.Inner_curve.Affine.t
             , Tick.Field.t )
-            Plonk_types.Openings.Bulletproof.t
+            Kimchi_backend_common.Plonk_types.Openings.Bulletproof.t
             t
         | Wrap_domain_indices : (Tock.Field.t, max_proofs_verified) Vector.t t
     end in
@@ -129,7 +129,7 @@ module Step = struct
           , local_branches )
           H3.T(Per_proof_witness.Constant.No_app_state).t
           t
-      | Wrap_index : Tock.Curve.Affine.t array Plonk_verification_key_evals.t t
+      | Wrap_index : Tock.Curve.Affine.t array Kimchi_backend_common.Plonk_verification_key_evals.t t
       | App_state : statement t
       | Return_value : return_value -> unit t
       | Auxiliary_value : auxiliary_value -> unit t
@@ -184,7 +184,7 @@ module Step = struct
             H3.T(Per_proof_witness.Constant.No_app_state).t
             t
         | Wrap_index :
-            Tock.Curve.Affine.t array Plonk_verification_key_evals.t t
+            Tock.Curve.Affine.t array Kimchi_backend_common.Plonk_verification_key_evals.t t
         | App_state : statement t
         | Return_value : return_value -> unit t
         | Auxiliary_value : auxiliary_value -> unit t

@@ -2,7 +2,7 @@
     non-deterministic witness data from the prover.
 *)
 
-open Pickles_types
+open Kimchi_backend_types
 
 module Step : sig
   module type S = sig
@@ -35,7 +35,7 @@ module Step : sig
           Hlist.H3.T(Per_proof_witness.Constant.No_app_state).t
           Snarky_backendless.Request.t
       | Wrap_index :
-          Backend.Tock.Curve.Affine.t array Plonk_verification_key_evals.t
+          Backend.Tock.Curve.Affine.t array Kimchi_backend_common.Plonk_verification_key_evals.t
           Snarky_backendless.Request.t
       | App_state : statement Snarky_backendless.Request.t
       | Return_value : return_value -> unit Snarky_backendless.Request.t
@@ -76,7 +76,7 @@ module Wrap : sig
       | Evals :
           ( ( Impls.Wrap.Field.Constant.t
             , Impls.Wrap.Field.Constant.t array )
-            Plonk_types.All_evals.t
+            Kimchi_backend_common.Plonk_types.All_evals.t
           , max_proofs_verified )
           Vector.t
           Snarky_backendless.Request.t
@@ -105,12 +105,12 @@ module Wrap : sig
           Import.Types.Step.Proof_state.t
           Snarky_backendless.Request.t
       | Messages :
-          Backend.Tock.Inner_curve.Affine.t Plonk_types.Messages.t
+          Backend.Tock.Inner_curve.Affine.t Kimchi_backend_common.Plonk_types.Messages.t
           Snarky_backendless.Request.t
       | Openings_proof :
           ( Backend.Tock.Inner_curve.Affine.t
           , Backend.Tick.Field.t )
-          Plonk_types.Openings.Bulletproof.t
+          Kimchi_backend_common.Plonk_types.Openings.Bulletproof.t
           Snarky_backendless.Request.t
       | Wrap_domain_indices :
           (Impls.Wrap.Field.Constant.t, max_proofs_verified) Vector.t

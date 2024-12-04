@@ -1,11 +1,11 @@
-open Pickles_types
+open Kimchi_backend_types
 open Import
 open Backend
 
 val expand_deferred :
      zk_rows:int
   -> evals:
-       (Pasta_bindings.Fp.t, Pasta_bindings.Fp.t array) Plonk_types.All_evals.t
+       (Pasta_bindings.Fp.t, Pasta_bindings.Fp.t array) Kimchi_backend_common.Plonk_types.All_evals.t
   -> old_bulletproof_challenges:
        ( Challenge.Constant.t Kimchi_types.scalar_challenge
          Bulletproof_challenge.t

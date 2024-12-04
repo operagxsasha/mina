@@ -38,7 +38,7 @@ let test_scale_fast_2 () =
           let x =
             let chunks_needed = Ops.chunks_needed ~num_bits:(n - 1) in
             let actual_bits_used = chunks_needed * Ops.bits_per_chunk in
-            Pickles_types.Pcs_batch.pow ~one:G.Constant.Scalar.one
+            Kimchi_backend_types.Pcs_batch.pow ~one:G.Constant.Scalar.one
               ~mul:G.Constant.Scalar.( * )
               G.Constant.Scalar.(of_int 2)
               actual_bits_used
@@ -78,7 +78,7 @@ let test_scale_fast_2_small () =
           let x =
             let chunks_needed = Ops.chunks_needed ~num_bits:(n - 1) in
             let actual_bits_used = chunks_needed * Ops.bits_per_chunk in
-            Pickles_types.Pcs_batch.pow ~one:G.Constant.Scalar.one
+            Kimchi_backend_types.Pcs_batch.pow ~one:G.Constant.Scalar.one
               ~mul:G.Constant.Scalar.( * )
               G.Constant.Scalar.(of_int 2)
               actual_bits_used

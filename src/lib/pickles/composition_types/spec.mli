@@ -41,31 +41,31 @@ module rec T : sig
            , (< challenge1 : 'a ; challenge2 : 'b ; .. > as 'env) )
            t
     | Vector :
-        ('t1, 't2, 'env) t * 'n Pickles_types.Nat.t
-        -> ( ('t1, 'n) Pickles_types.Vector.t
-           , ('t2, 'n) Pickles_types.Vector.t
+        ('t1, 't2, 'env) t * 'n Kimchi_backend_types.Nat.t
+        -> ( ('t1, 'n) Kimchi_backend_types.Vector.t
+           , ('t2, 'n) Kimchi_backend_types.Vector.t
            , 'env )
            t
     | Array : ('t1, 't2, 'env) t * int -> ('t1 array, 't2 array, 'env) t
     | Struct :
-        ('xs1, 'xs2, 'env) Pickles_types.Hlist.H2_1.T(T).t
-        -> ( 'xs1 Pickles_types.Hlist.HlistId.t
-           , 'xs2 Pickles_types.Hlist.HlistId.t
+        ('xs1, 'xs2, 'env) Kimchi_backend_types.Hlist.H2_1.T(T).t
+        -> ( 'xs1 Kimchi_backend_types.Hlist.HlistId.t
+           , 'xs2 Kimchi_backend_types.Hlist.HlistId.t
            , 'env )
            t
     | Opt :
         { inner : ('a1, 'a2, 'env) t
-        ; flag : Pickles_types.Opt.Flag.t
+        ; flag : Kimchi_backend_types.Opt.Flag.t
         ; dummy1 : 'a1
         ; dummy2 : 'a2
         }
         -> ( 'a1 option
-           , ('a2, 'bool) Pickles_types.Opt.t
+           , ('a2, 'bool) Kimchi_backend_types.Opt.t
            , (< bool1 : bool ; bool2 : 'bool ; .. > as 'env) )
            t
     | Opt_unflagged :
         { inner : ('a1, 'a2, (< bool1 : bool ; bool2 : 'bool ; .. > as 'env)) t
-        ; flag : Pickles_types.Opt.Flag.t
+        ; flag : Kimchi_backend_types.Opt.Flag.t
         ; dummy1 : 'a1
         ; dummy2 : 'a2
         }

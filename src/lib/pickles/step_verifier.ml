@@ -5,7 +5,7 @@ open Import
 open Common
 open Util
 open Types.Step
-open Pickles_types
+open Kimchi_backend_types
 
 module Make
     (Inputs : Intf.Step_main_inputs.S
@@ -251,7 +251,7 @@ struct
           with_label "combined_polynomial" (fun () ->
               Pcs_batch.combine_split_commitments pcs_batch
                 ~reduce_without_degree_bound:Array.to_list
-                ~reduce_with_degree_bound:(fun { Plonk_types.Poly_comm
+                ~reduce_with_degree_bound:(fun { Kimchi_backend_common.Plonk_types.Poly_comm
                                                  .With_degree_bound
                                                  .unshifted
                                                ; shifted
@@ -295,7 +295,7 @@ struct
                    ~f:(Array.map ~f:(fun x -> `Finite x)) )
                 (Vector.map with_degree_bound
                    ~f:
-                     (let open Plonk_types.Poly_comm.With_degree_bound in
+                     (let open Kimchi_backend_common.Plonk_types.Poly_comm.With_degree_bound in
                      fun { shifted; unshifted } ->
                        let f x = `Maybe_finite x in
                        { unshifted = Array.map ~f unshifted
@@ -484,7 +484,7 @@ struct
          [ `Known of Domain.t
          | `Side_loaded of
            _ Composition_types.Branch_data.Proofs_verified.One_hot.Checked.t ]
-         ) ~srs ~verification_key:(m : _ Plonk_verification_key_evals.t) ~xi
+         ) ~srs ~verification_key:(m : _ Kimchi_backend_common.Plonk_verification_key_evals.t) ~xi
       ~sponge ~sponge_after_index
       ~(public_input :
          [ `Field of Field.t | `Packed_bits of Field.t * int ] array )
@@ -506,7 +506,7 @@ struct
         in
         let sample () = squeeze_challenge sponge in
         let sample_scalar () = squeeze_scalar sponge in
-        let open Plonk_types.Messages.In_circuit in
+        let open Kimchi_backend_common.Plonk_types.Messages.In_circuit in
         let without = Type.Without_degree_bound in
         let absorb_g gs = absorb sponge without gs in
         let index_digest =
@@ -565,7 +565,7 @@ struct
            against "combined_inner_product" *)
         let sigma_comm_init, [ _ ] =
           Vector.split m.sigma_comm
-            (snd (Plonk_types.Permuts_minus_1.add Nat.N1.n))
+            (snd (Kimchi_backend_common.Plonk_types.Permuts_minus_1.add Nat.N1.n))
         in
         let ft_comm =
           with_label __LOC__ (fun () ->
@@ -592,9 +592,9 @@ struct
               :: m.endomul_scalar_comm
               :: Vector.append w_comm
                    (Vector.append m.coefficients_comm sigma_comm_init
-                      (snd Plonk_types.(Columns.add Permuts_minus_1.n)) )
+                      (snd Kimchi_backend_common.Plonk_types.(Columns.add Permuts_minus_1.n)) )
                    (snd
-                      Plonk_types.(
+                      Kimchi_backend_common.Plonk_types.(
                         Columns.add (fst (Columns.add Permuts_minus_1.n))) ) )
               (snd
                  (Wrap_hack.Padded_length.add
@@ -691,7 +691,7 @@ struct
       domain ~max:(Domain.log2_size max_domains.h)
 
   (* module Split_evaluations = struct
-       open Plonk_types
+       open Kimchi_backend_common.Plonk_types
 
        let mask' { Bounded.max; actual } : Boolean.var array =
          let (T max) = Nat.of_int max in
@@ -759,7 +759,7 @@ struct
         | [] ->
             Field.zero )
 
-  open Plonk_types
+  open Kimchi_backend_common.Plonk_types
 
   module Opt_sponge = struct
     include Opt_sponge.Make (Impl) (Step_main_inputs.Sponge.Permutation)
@@ -847,8 +847,8 @@ struct
         , Field.Constant.t Branch_data.Checked.t
         , _ )
         Types.Wrap.Proof_state.Deferred_values.In_circuit.t )
-      { Plonk_types.All_evals.In_circuit.ft_eval1; evals } =
-    Plonk_types.Evals.In_circuit.validate_feature_flags ~true_:Boolean.true_
+      { Kimchi_backend_common.Plonk_types.All_evals.In_circuit.ft_eval1; evals } =
+    Kimchi_backend_common.Plonk_types.Evals.In_circuit.validate_feature_flags ~true_:Boolean.true_
       ~false_:Boolean.false_ ~or_:Boolean.( ||| )
       ~assert_equal:Boolean.Assert.( = ) ~feature_flags:plonk.feature_flags
       evals.evals ;

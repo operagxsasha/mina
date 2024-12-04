@@ -1,6 +1,6 @@
 module SC = Scalar_challenge
 open Core_kernel
-open Pickles_types
+open Kimchi_backend_types
 open Common
 open Import
 open Backend
@@ -16,17 +16,17 @@ let expand_deferred (type n most_recent_width) ~zk_rows
     ~(evals :
        ( Backend.Tick.Field.t
        , Backend.Tick.Field.t array )
-       Pickles_types.Plonk_types.All_evals.t )
+       Kimchi_backend_common.Plonk_types.All_evals.t )
     ~(old_bulletproof_challenges :
        ( Challenge.Constant.t Scalar_challenge.Stable.Latest.t
          Bulletproof_challenge.t
          Step_bp_vec.t
        , most_recent_width )
-       Pickles_types.Vector.t )
+       Kimchi_backend_types.Vector.t )
     ~(proof_state :
        ( Challenge.Constant.t
        , Challenge.Constant.t Scalar_challenge.t
-       , Backend.Tick.Field.t Pickles_types.Shifted_value.Type1.t
+       , Backend.Tick.Field.t Kimchi_backend_types.Shifted_value.Type1.t
        , bool
        , n Pickles__.Proof.Base.Messages_for_next_proof_over_same_field.Wrap.t
        , Digest.Constant.t
@@ -68,7 +68,7 @@ let expand_deferred (type n most_recent_width) ~zk_rows
     Plonk_checks.evals_of_split_evals
       (module Tick.Field)
       evals.evals.evals ~rounds:(Nat.to_int Tick.Rounds.n) ~zeta ~zetaw
-    |> Plonk_types.Evals.to_in_circuit
+    |> Kimchi_backend_common.Plonk_types.Evals.to_in_circuit
   in
   let tick_domain =
     Plonk_checks.domain
@@ -154,7 +154,7 @@ let expand_deferred (type n most_recent_width) ~zk_rows
    in
    absorb challenges_digest ;
    absorb evals.ft_eval1 ;
-   let xs = Plonk_types.Evals.to_absorption_sequence evals.evals.evals in
+   let xs = Kimchi_backend_common.Plonk_types.Evals.to_absorption_sequence evals.evals.evals in
    let x1, x2 = evals.evals.public_input in
    Array.iter ~f:absorb x1 ;
    Array.iter ~f:absorb x2 ;

@@ -1,7 +1,7 @@
 open Core_kernel
 open Backend
 open Impls.Step
-open Pickles_types
+open Kimchi_backend_types
 open Common
 open Import
 module Shifted_value = Shifted_value.Type2
@@ -38,11 +38,11 @@ module Constant = struct
          ; gamma = Challenge.Constant.to_tock_field gamma
          ; zeta = Common.Ipa.Wrap.endo_to_field zeta
          ; joint_combiner = None
-         ; feature_flags = Plonk_types.Features.none_bool
+         ; feature_flags = Kimchi_backend_common.Plonk_types.Features.none_bool
          }
        in
        let evals =
-         Plonk_types.Evals.to_in_circuit
+         Kimchi_backend_common.Plonk_types.Evals.to_in_circuit
            (Lazy.force Dummy.evals_combined).evals.evals
        in
        let env =

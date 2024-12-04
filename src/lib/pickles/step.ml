@@ -1,5 +1,5 @@
 module SC = Scalar_challenge
-open Pickles_types
+open Kimchi_backend_types
 open Poly_types
 open Hlist
 open Backend
@@ -19,7 +19,7 @@ struct
   let _double_zip = Double.map2 ~f:Core_kernel.Tuple2.create
 
   module E = struct
-    type t = Tock.Field.t array Double.t Plonk_types.Evals.t * Tock.Field.t
+    type t = Tock.Field.t array Double.t Kimchi_backend_common.Plonk_types.Evals.t * Tock.Field.t
   end
 
   module Plonk_checks = struct
@@ -55,7 +55,7 @@ struct
         , local_heights )
         Step_branch_data.t ) (next_state : A_value.t)
       ~maxes:
-        (module Maxes : Pickles_types.Hlist.Maxes.S
+        (module Maxes : Kimchi_backend_types.Hlist.Maxes.S
           with type length = Max_proofs_verified.n
            and type ns = max_local_max_proof_verifieds )
       ~(prevs_length : (prev_vars, prevs_length) Length.t) ~self ~step_domains
@@ -121,7 +121,7 @@ struct
     let expand_proof :
         type var value local_max_proofs_verified m.
            Impls.Wrap.Verification_key.t
-        -> _ array Plonk_verification_key_evals.t
+        -> _ array Kimchi_backend_common.Plonk_verification_key_evals.t
         -> value
         -> (local_max_proofs_verified, local_max_proofs_verified) Proof.t
         -> (var, value, local_max_proofs_verified, m) Types_map.Basic.t
@@ -167,7 +167,7 @@ struct
             (module Tick.Field)
             t.prev_evals.evals.evals ~rounds:(Nat.to_int Tick.Rounds.n) ~zeta
             ~zetaw
-          |> Plonk_types.Evals.to_in_circuit
+          |> Kimchi_backend_common.Plonk_types.Evals.to_in_circuit
         in
         let plonk_minimal =
           { Composition_types.Wrap.Proof_state.Deferred_values.Plonk.Minimal
@@ -330,7 +330,7 @@ struct
             Option.map
               ~f:(Scalar_challenge.map ~f:Challenge.Constant.of_tock_field)
               (O.joint_combiner_chal o)
-        ; feature_flags = Plonk_types.Features.none_bool
+        ; feature_flags = Kimchi_backend_common.Plonk_types.Features.none_bool
         }
       in
       let xi = scalar_chal O.v in
@@ -420,7 +420,7 @@ struct
           (module Tock.Field)
           proof.openings.evals ~rounds:(Nat.to_int Tock.Rounds.n)
           ~zeta:As_field.zeta ~zetaw
-        |> Plonk_types.Evals.to_in_circuit
+        |> Kimchi_backend_common.Plonk_types.Evals.to_in_circuit
       in
       let tock_plonk_minimal =
         { plonk0 with
@@ -469,7 +469,7 @@ struct
               unstage (challenge_polynomial (Vector.to_array chals)) )
             (Wrap_hack.pad_challenges prev_challenges)
         in
-        let a = Plonk_types.Evals.to_list e in
+        let a = Kimchi_backend_common.Plonk_types.Evals.to_list e in
         let open As_field in
         let combine ~which_eval ~ft_eval pt =
           let f (x, y) = match which_eval with `Fst -> x | `Snd -> y in
@@ -893,7 +893,7 @@ struct
           Vector.extend_front
             (Vector.map2 prev_evals (Option.value_exn !x_hats)
                ~f:(fun (es, ft_eval1) x_hat ->
-                 Plonk_types.All_evals.
+                 Kimchi_backend_common.Plonk_types.All_evals.
                    { ft_eval1
                    ; evals =
                        { With_public_input.evals = es

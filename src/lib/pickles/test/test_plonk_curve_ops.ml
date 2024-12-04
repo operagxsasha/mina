@@ -42,7 +42,7 @@ struct
             let x =
               let chunks_needed = chunks_needed ~num_bits:(n - 1) in
               let actual_bits_used = chunks_needed * bits_per_chunk in
-              Pickles_types.Pcs_batch.pow ~one:G.Constant.Scalar.one
+              Kimchi_backend_types.Pcs_batch.pow ~one:G.Constant.Scalar.one
                 ~mul:G.Constant.Scalar.( * )
                 G.Constant.Scalar.(of_int 2)
                 actual_bits_used
@@ -53,7 +53,7 @@ struct
           (random_point, input) )
 
   let test_scale_fast () =
-    let open Pickles_types in
+    let open Kimchi_backend_types in
     let shift = Shifted_value.Type1.Shift.create (module G.Constant.Scalar) in
     Quickcheck.test ~trials:10
       Quickcheck.Generator.(

@@ -1,4 +1,4 @@
-open Pickles_types
+open Kimchi_backend_types
 module Opt = Opt
 
 type ('a, 'b) opt := ('a, 'b) Opt.t
@@ -66,7 +66,7 @@ module Wrap : sig
                 ; gamma : 'challenge
                 ; zeta : 'scalar_challenge
                 ; joint_combiner : 'scalar_challenge option
-                ; feature_flags : 'bool Plonk_types.Features.t
+                ; feature_flags : 'bool Kimchi_backend_common.Plonk_types.Features.t
                 }
               [@@deriving sexp, compare, yojson, hlist, hash, equal]
 
@@ -87,7 +87,7 @@ module Wrap : sig
               ; gamma : 'challenge
               ; zeta : 'scalar_challenge
               ; joint_combiner : ('scalar_challenge, 'bool) Opt.t
-              ; feature_flags : 'bool Plonk_types.Features.t
+              ; feature_flags : 'bool Kimchi_backend_common.Plonk_types.Features.t
               }
           end
         end
@@ -118,7 +118,7 @@ module Wrap : sig
             ; zeta_to_domain_size : 'fp
             ; perm : 'fp
                   (** scalar used on one of the permutation polynomial commitments. *)
-            ; feature_flags : 'bool Plonk_types.Features.t
+            ; feature_flags : 'bool Kimchi_backend_common.Plonk_types.Features.t
             ; joint_combiner : 'scalar_challenge_opt
             }
           [@@deriving sexp, compare, yojson, hlist, hash, equal, fields]
@@ -301,7 +301,7 @@ module Wrap : sig
              dummy_scalar_challenge:'b Scalar_challenge.t
           -> challenge:('c, 'd) Step_impl.Typ.t
           -> scalar_challenge:('e, 'b) Step_impl.Typ.t
-          -> feature_flags:Opt.Flag.t Plonk_types.Features.Full.t
+          -> feature_flags:Opt.Flag.t Kimchi_backend_common.Plonk_types.Features.Full.t
           -> ('fp, 'a) Step_impl.Typ.t
           -> ('g, 'h) Step_impl.Typ.t
           -> ( ( ( 'c
@@ -374,7 +374,7 @@ module Wrap : sig
         [@@deriving
           sexp, compare, yojson, hlist, hash, equal, bin_shape, bin_io]
 
-        include Pickles_types.Sigs.VERSIONED
+        include Kimchi_backend_types.Sigs.VERSIONED
       end
 
       module Latest = V1
@@ -422,7 +422,7 @@ module Wrap : sig
           [@@deriving
             sexp, compare, yojson, hlist, hash, equal, bin_shape, bin_io]
 
-          include Pickles_types.Sigs.VERSIONED
+          include Kimchi_backend_types.Sigs.VERSIONED
         end
 
         module Latest = V1
@@ -524,7 +524,7 @@ module Wrap : sig
            dummy_scalar_challenge:'b Scalar_challenge.t
         -> challenge:('c, 'd) Step_impl.Typ.t
         -> scalar_challenge:('e, 'b) Step_impl.Typ.t
-        -> feature_flags:Opt.Flag.t Plonk_types.Features.Full.t
+        -> feature_flags:Opt.Flag.t Kimchi_backend_common.Plonk_types.Features.Full.t
         -> ('fp, 'a) Step_impl.Typ.t
         -> ('g, 'h) Step_impl.Typ.t
         -> ('i, 'j) Step_impl.Typ.t
@@ -579,7 +579,7 @@ module Wrap : sig
             (** The actual application-level state (e.g., for Mina, this is the
                 protocol state which contains the merkle root of the ledger,
                 state related to consensus, etc.) *)
-      ; dlog_plonk_index : 'g Plonk_verification_key_evals.t
+      ; dlog_plonk_index : 'g Kimchi_backend_common.Plonk_verification_key_evals.t
             (** The verification key corresponding to the wrap-circuit for this
                 recursive proof system.  It gets threaded through all the
                 circuits so that the step circuits can verify proofs against
@@ -667,7 +667,7 @@ module Wrap : sig
           }
         [@@deriving compare, yojson, sexp, hash, equal, bin_shape, bin_io]
 
-        include Pickles_types.Sigs.VERSIONED
+        include Kimchi_backend_types.Sigs.VERSIONED
       end
 
       module Latest = V1
@@ -743,7 +743,7 @@ module Wrap : sig
             }
           [@@deriving compare, yojson, sexp, hash, equal, bin_shape, bin_io]
 
-          include Pickles_types.Sigs.VERSIONED
+          include Kimchi_backend_types.Sigs.VERSIONED
         end
 
         module Latest = V1
@@ -821,7 +821,7 @@ module Wrap : sig
       val spec :
            'a Spec.impl
         -> ('challenge1, 'challenge2, 'field1, 'field2) Lookup_parameters.t
-        -> Opt.Flag.t Plonk_types.Features.t
+        -> Opt.Flag.t Kimchi_backend_common.Plonk_types.Features.t
         -> ( ( 'field1
              , 'challenge1
              , 'challenge1 Scalar_challenge.t
@@ -887,7 +887,7 @@ module Step : sig
   module Plonk_polys = Nat.N10
 
   module Bulletproof : sig
-    include module type of Plonk_types.Openings.Bulletproof
+    include module type of Kimchi_backend_common.Plonk_types.Openings.Bulletproof
 
     (** This is data that can be computed in linear time from the proof +
         statement.
@@ -923,7 +923,7 @@ module Step : sig
           [@@deriving sexp, compare, yojson, hlist, hash, equal]
 
           val to_wrap :
-               feature_flags:'bool Plonk_types.Features.t
+               feature_flags:'bool Kimchi_backend_common.Plonk_types.Features.t
             -> ('challenge, 'scalar_challenge) t
             -> ( 'challenge
                , 'scalar_challenge
@@ -1244,7 +1244,7 @@ module Step : sig
 
     val wrap_typ :
          assert_16_bits:(Wrap_impl.Field.t -> unit)
-      -> (Opt.Flag.t Plonk_types.Features.t, 'n) Vector.t
+      -> (Opt.Flag.t Kimchi_backend_common.Plonk_types.Features.t, 'n) Vector.t
       -> ('b, 'a) Wrap_impl.Typ.t
       -> ( ( ( ( Wrap_impl.Field.Constant.t Limb_vector.Challenge.t
                , Wrap_impl.Field.Constant.t Limb_vector.Challenge.t
@@ -1384,4 +1384,4 @@ end
 (** Alias for
  ** {!val:Pickles_base.Side_loaded_verification_key.index_to_field_elements} *)
 val index_to_field_elements :
-  'a Plonk_verification_key_evals.t -> g:('a -> 'b array) -> 'b array
+  'a Kimchi_backend_common.Plonk_verification_key_evals.t -> g:('a -> 'b array) -> 'b array

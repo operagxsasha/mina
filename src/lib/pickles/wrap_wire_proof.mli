@@ -3,7 +3,7 @@
 *)
 
 open Core_kernel
-open Pickles_types
+open Kimchi_backend_types
 module Columns = Nat.N15
 module Columns_vec = Vector.Vector_15
 module Coefficients = Nat.N15
@@ -32,9 +32,9 @@ module Commitments : sig
     end
   end]
 
-  val to_kimchi : t -> Backend.Tock.Curve.Affine.t Plonk_types.Messages.t
+  val to_kimchi : t -> Backend.Tock.Curve.Affine.t Kimchi_backend_common.Plonk_types.Messages.t
 
-  val of_kimchi : Backend.Tock.Curve.Affine.t Plonk_types.Messages.t -> t
+  val of_kimchi : Backend.Tock.Curve.Affine.t Kimchi_backend_common.Plonk_types.Messages.t -> t
 end
 
 module Evaluations : sig
@@ -73,11 +73,11 @@ module Evaluations : sig
   val to_kimchi :
        t
     -> (Backend.Tock.Field.t array * Backend.Tock.Field.t array)
-       Plonk_types.Evals.t
+       Kimchi_backend_common.Plonk_types.Evals.t
 
   val of_kimchi :
        (Backend.Tock.Field.t array * Backend.Tock.Field.t array)
-       Plonk_types.Evals.t
+       Kimchi_backend_common.Plonk_types.Evals.t
     -> t
 end
 
@@ -91,7 +91,7 @@ module Stable : sig
       ; bulletproof :
           ( Backend.Tick.Field.Stable.V1.t * Backend.Tick.Field.Stable.V1.t
           , Backend.Tock.Field.Stable.V1.t )
-          Plonk_types.Openings.Bulletproof.Stable.V1.t
+          Kimchi_backend_common.Plonk_types.Openings.Bulletproof.Stable.V1.t
       }
     [@@deriving compare, sexp, yojson, hash, equal]
   end

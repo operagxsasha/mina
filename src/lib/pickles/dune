@@ -48,7 +48,7 @@
    bitstring_lib
    snarky.intf
    pickles.backend
-   pickles_types
+   kimchi_backend_types
    snarky.backendless
    snarky_group_map
    sponge

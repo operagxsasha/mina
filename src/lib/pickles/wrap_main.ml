@@ -1,5 +1,5 @@
 open Core_kernel
-open Pickles_types
+open Kimchi_backend_types
 open Hlist
 open Common
 open Import
@@ -209,7 +209,7 @@ let wrap_main
                   wrap_typ
                     ~assert_16_bits:(Wrap_verifier.assert_n_bits ~n:16)
                     (Vector.init Max_proofs_verified.n ~f:(fun _ ->
-                         Plonk_types.Features.none ) )
+                         Kimchi_backend_common.Plonk_types.Features.none ) )
                     (Shifted_value.Type2.wrap_typ Field.typ)
                 in
                 exists typ ~request:(fun () -> Req.Proof_state) )
@@ -219,7 +219,7 @@ let wrap_main
                 Wrap_verifier.choose_key which_branch
                   (Vector.map step_keys
                      ~f:
-                       (Plonk_verification_key_evals.Step.map
+                       (Kimchi_backend_common.Plonk_verification_key_evals.Step.map
                           ~f:(Array.map ~f:Inner_curve.constant)
                           ~f_opt:(function
                          | None ->
@@ -229,7 +229,7 @@ let wrap_main
           in
           let () =
             (* Check consistency between index and feature flags. *)
-            let { Plonk_verification_key_evals.Step.sigma_comm = _
+            let { Kimchi_backend_common.Plonk_verification_key_evals.Step.sigma_comm = _
                 ; coefficients_comm = _
                 ; generic_comm = _
                 ; psm_comm = _
@@ -259,7 +259,7 @@ let wrap_main
                 } =
               step_plonk_index
             in
-            let { Plonk_types.Features.Full.range_check0
+            let { Kimchi_backend_common.Plonk_types.Features.Full.range_check0
                 ; range_check1
                 ; foreign_field_add
                 ; foreign_field_mul
@@ -355,8 +355,8 @@ let wrap_main
                 let evals =
                   let ty =
                     let ty =
-                      Plonk_types.All_evals.wrap_typ ~num_chunks:1
-                        Plonk_types.Features.Full.none
+                      Kimchi_backend_common.Plonk_types.All_evals.wrap_typ ~num_chunks:1
+                        Kimchi_backend_common.Plonk_types.Features.Full.none
                     in
                     Vector.wrap_typ ty Max_proofs_verified.n
                   in
@@ -454,7 +454,7 @@ let wrap_main
           let openings_proof =
             let shift = Shifts.tick1 in
             exists
-              (Plonk_types.Openings.Bulletproof.wrap_typ
+              (Kimchi_backend_common.Plonk_types.Openings.Bulletproof.wrap_typ
                  ( Typ.transport Wrap_verifier.Other_field.Packed.typ
                      ~there:(fun x ->
                        (* When storing, make it a shifted value *)
@@ -484,7 +484,7 @@ let wrap_main
             let messages =
               with_label __LOC__ (fun () ->
                   exists
-                    (Plonk_types.Messages.wrap_typ Inner_curve.typ feature_flags
+                    (Kimchi_backend_common.Plonk_types.Messages.wrap_typ Inner_curve.typ feature_flags
                        ~dummy:Inner_curve.Params.one
                        ~commitment_lengths:
                          (Commitment_lengths.default ~num_chunks) )

@@ -26,15 +26,15 @@ module Width : sig
 
   val typ : (Checked.t, t) Impls.Step.Typ.t
 
-  module Max = Pickles_types.Nat.N2
+  module Max = Kimchi_backend_types.Nat.N2
 
-  module Max_vector : Pickles_types.Vector.With_version(Max).S
+  module Max_vector : Kimchi_backend_types.Vector.With_version(Max).S
 
   module Max_at_most : sig
     [%%versioned:
     module Stable : sig
       module V1 : sig
-        type 'a t = ('a, Max.n) Pickles_types.At_most.t
+        type 'a t = ('a, Max.n) Kimchi_backend_types.At_most.t
         [@@deriving compare, sexp, yojson, hash, equal]
       end
     end]
@@ -53,7 +53,7 @@ module Checked : sig
           (** The actual domain size used by the wrap circuit. *)
     ; wrap_index :
         Step_main_inputs.Inner_curve.t
-        Pickles_types.Plonk_verification_key_evals.t
+        Kimchi_backend_common.Plonk_verification_key_evals.t
           (** The plonk verification key for the 'wrapping' proof that this key
               is used to verify.
           *)

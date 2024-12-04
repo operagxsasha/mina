@@ -1,5 +1,5 @@
 open Core_kernel
-open Pickles_types
+open Kimchi_backend_types
 module Columns = Nat.N15
 module Columns_vec = Vector.Vector_15
 module Coefficients = Nat.N15
@@ -35,7 +35,7 @@ module Commitments = struct
   end]
 
   let to_kimchi ({ w_comm; z_comm; t_comm } : t) :
-      Backend.Tock.Curve.Affine.t Plonk_types.Messages.t =
+      Backend.Tock.Curve.Affine.t Kimchi_backend_common.Plonk_types.Messages.t =
     { w_comm = Vector.map ~f:(fun x -> [| x |]) w_comm
     ; z_comm = [| z_comm |]
     ; t_comm = Array.map ~f:(fun x -> x) (Vector.to_array t_comm)
@@ -44,7 +44,7 @@ module Commitments = struct
 
   let of_kimchi
       ({ w_comm; z_comm; t_comm; lookup = _ } :
-        Backend.Tock.Curve.Affine.t Plonk_types.Messages.t ) : t =
+        Backend.Tock.Curve.Affine.t Kimchi_backend_common.Plonk_types.Messages.t ) : t =
     { w_comm = Vector.map ~f:(fun x -> x.(0)) w_comm
     ; z_comm = z_comm.(0)
     ; t_comm = Vector.of_array_and_length_exn t_comm Quotient_polynomial.n
@@ -104,7 +104,7 @@ module Evaluations = struct
        } :
         t ) :
       (Backend.Tock.Field.t array * Backend.Tock.Field.t array)
-      Plonk_types.Evals.t =
+      Kimchi_backend_common.Plonk_types.Evals.t =
     let conv (x, y) = ([| x |], [| y |]) in
     { w = Vector.map ~f:conv w
     ; coefficients = Vector.map ~f:conv coefficients
@@ -161,7 +161,7 @@ module Evaluations = struct
        ; foreign_field_mul_lookup_selector = _
        } :
         (Backend.Tock.Field.t array * Backend.Tock.Field.t array)
-        Plonk_types.Evals.t ) : t =
+        Kimchi_backend_common.Plonk_types.Evals.t ) : t =
     let conv (x, y) = (x.(0), y.(0)) in
     { w = Vector.map ~f:conv w
     ; coefficients = Vector.map ~f:conv coefficients
@@ -188,7 +188,7 @@ module Stable = struct
       ; bulletproof :
           ( Backend.Tick.Field.Stable.V1.t * Backend.Tick.Field.Stable.V1.t
           , Backend.Tock.Field.Stable.V1.t )
-          Plonk_types.Openings.Bulletproof.Stable.V1.t
+          Kimchi_backend_common.Plonk_types.Openings.Bulletproof.Stable.V1.t
             (* TODO-URGENT: Validate bulletproof length on the rust side *)
       }
     [@@deriving compare, sexp, yojson, hash, equal]

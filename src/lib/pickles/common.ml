@@ -1,5 +1,5 @@
 open Core_kernel
-open Pickles_types
+open Kimchi_backend_types
 open Import
 open Backend
 
@@ -165,7 +165,7 @@ module Ipa = struct
       let comm =
         Kimchi_bindings.Protocol.SRS.Fq.b_poly_commitment
           (Backend.Tock.Keypair.load_urs ())
-          (Pickles_types.Vector.to_array (compute_challenges chals))
+          (Kimchi_backend_types.Vector.to_array (compute_challenges chals))
       in
       comm.unshifted.(0) |> finite_exn
   end
@@ -184,7 +184,7 @@ module Ipa = struct
       let comm =
         Kimchi_bindings.Protocol.SRS.Fp.b_poly_commitment
           (Backend.Tick.Keypair.load_urs ())
-          (Pickles_types.Vector.to_array (compute_challenges chals))
+          (Kimchi_backend_types.Vector.to_array (compute_challenges chals))
       in
       comm.unshifted.(0) |> finite_exn
 
@@ -230,7 +230,7 @@ let tick_public_input_of_statement ~max_proofs_verified
     ~f:(Backend.Tick.Field.Vector.get input)
 
 let ft_comm ~add:( + ) ~scale ~negate
-    ~verification_key:(m : _ array Plonk_verification_key_evals.t)
+    ~verification_key:(m : _ array Kimchi_backend_common.Plonk_verification_key_evals.t)
     ~(plonk : _ Types.Wrap.Proof_state.Deferred_values.Plonk.In_circuit.t)
     ~t_comm =
   let reduce_chunks comm =
@@ -242,7 +242,7 @@ let ft_comm ~add:( + ) ~scale ~negate
     !res
   in
   let _, [ sigma_comm_last ] =
-    Vector.split m.sigma_comm (snd (Plonk_types.Permuts_minus_1.add Nat.N1.n))
+    Vector.split m.sigma_comm (snd (Kimchi_backend_common.Plonk_types.Permuts_minus_1.add Nat.N1.n))
   in
   let sigma_comm_last = reduce_chunks sigma_comm_last in
   let f_comm = List.reduce_exn ~f:( + ) [ scale sigma_comm_last plonk.perm ] in

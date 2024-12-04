@@ -1,5 +1,5 @@
 open Core_kernel
-open Pickles_types
+open Kimchi_backend_types
 open Pickles.Impls.Step
 
 let () = Pickles.Backend.Tick.Keypair.set_urs_info []
@@ -81,7 +81,7 @@ let test_range_check_lookup () =
                 ; auxiliary_output = ()
                 } )
           ; feature_flags =
-              Plonk_types.Features.
+              Kimchi_backend_common.Plonk_types.Features.
                 { none_bool with range_check0 = true; lookup = true }
           }
         ] )

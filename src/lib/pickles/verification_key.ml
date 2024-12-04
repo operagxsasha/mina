@@ -1,5 +1,5 @@
 open Core_kernel
-open Pickles_types
+open Kimchi_backend_types
 open Import
 open Kimchi_pasta.Pasta
 
@@ -126,7 +126,7 @@ module Repr = struct
       type t =
         { commitments :
             Backend.Tock.Curve.Affine.Stable.V1.t
-            Plonk_verification_key_evals.Stable.V2.t
+            Kimchi_backend_common.Plonk_verification_key_evals.Stable.V2.t
         ; data : Data.Stable.V1.t
         }
       [@@deriving to_yojson]
@@ -140,7 +140,7 @@ end
 module Stable = struct
   module V2 = struct
     type t =
-      { commitments : Backend.Tock.Curve.Affine.t Plonk_verification_key_evals.t
+      { commitments : Backend.Tock.Curve.Affine.t Kimchi_backend_common.Plonk_verification_key_evals.t
       ; index :
           (Impls.Wrap.Verification_key.t
           [@to_yojson
@@ -160,7 +160,7 @@ module Stable = struct
         let log2_size = Int.ceil_log2 d.constraints in
         let public =
           let (T (input, _conv, _conv_inv)) =
-            Impls.Wrap.input ~feature_flags:Plonk_types.Features.Full.maybe ()
+            Impls.Wrap.input ~feature_flags:Kimchi_backend_common.Plonk_types.Features.Full.maybe ()
           in
           let (Typ typ) = input in
           typ.size_in_field_elements
@@ -221,8 +221,8 @@ let to_yojson = Stable.Latest.to_yojson
 let of_yojson = Stable.Latest.of_yojson
 
 let dummy_commitments g =
-  let open Plonk_types in
-  { Plonk_verification_key_evals.sigma_comm =
+  let open Kimchi_backend_common.Plonk_types in
+  { Kimchi_backend_common.Plonk_verification_key_evals.sigma_comm =
       Vector.init Permuts.n ~f:(fun _ -> g)
   ; coefficients_comm = Vector.init Columns.n ~f:(fun _ -> g)
   ; generic_comm = g
@@ -234,8 +234,8 @@ let dummy_commitments g =
   }
 
 let dummy_step_commitments g =
-  let open Plonk_types in
-  { Plonk_verification_key_evals.Step.sigma_comm =
+  let open Kimchi_backend_common.Plonk_types in
+  { Kimchi_backend_common.Plonk_verification_key_evals.Step.sigma_comm =
       Vector.init Permuts.n ~f:(fun _ -> g)
   ; coefficients_comm = Vector.init Columns.n ~f:(fun _ -> g)
   ; generic_comm = g

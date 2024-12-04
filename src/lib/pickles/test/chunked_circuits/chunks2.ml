@@ -1,5 +1,5 @@
 open Core_kernel
-open Pickles_types
+open Kimchi_backend_types
 open Pickles.Impls.Step
 
 let () = Pickles.Backend.Tick.Keypair.set_urs_info []
@@ -71,7 +71,7 @@ let test () =
                 ; public_output = ()
                 ; auxiliary_output = ()
                 } )
-          ; feature_flags = Pickles_types.Plonk_types.Features.none_bool
+          ; feature_flags = Kimchi_backend_common.Plonk_types.Features.none_bool
           }
         ] )
       ()
@@ -120,7 +120,7 @@ let test () =
                 ; public_output = ()
                 ; auxiliary_output = ()
                 } )
-          ; feature_flags = Pickles_types.Plonk_types.Features.none_bool
+          ; feature_flags = Kimchi_backend_common.Plonk_types.Features.none_bool
           }
         ] )
       ()

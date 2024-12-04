@@ -16,7 +16,7 @@
    ocaml-migrate-parsetree
    base.base_internalhash_types
    ;; local libraries
-   pickles_types
+   kimchi_backend_types
    pickles_base
    pickles.composition_types
    kimchi_backend

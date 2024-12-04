@@ -1,4 +1,4 @@
-open Pickles_types
+open Kimchi_backend_types
 
 type 'f t = 'f Snarky_backendless.Cvar.t
 

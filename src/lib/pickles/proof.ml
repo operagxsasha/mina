@@ -1,9 +1,9 @@
 open Core_kernel
-open Pickles_types
+open Kimchi_backend_types
 open Import
 open Backend
 
-let hash_fold_array = Pickles_types.Plonk_types.hash_fold_array
+let hash_fold_array = Kimchi_backend_common.Plonk_types.hash_fold_array
 
 module Base = struct
   module Messages_for_next_proof_over_same_field =
@@ -56,7 +56,7 @@ module Base = struct
           ; prev_evals :
               ( Tick.Field.Stable.V1.t
               , Tick.Field.Stable.V1.t Bounded_types.ArrayN16.Stable.V1.t )
-              Plonk_types.All_evals.Stable.V1.t
+              Kimchi_backend_common.Plonk_types.All_evals.Stable.V1.t
           ; proof : Wrap_wire_proof.Stable.V1.t
           }
         [@@deriving compare, sexp, yojson, hash, equal]
@@ -83,7 +83,7 @@ module Base = struct
             Step_bp_vec.t
           , Branch_data.t )
           Types.Wrap.Statement.Minimal.t
-      ; prev_evals : (Tick.Field.t, Tick.Field.t array) Plonk_types.All_evals.t
+      ; prev_evals : (Tick.Field.t, Tick.Field.t array) Kimchi_backend_common.Plonk_types.All_evals.t
       ; proof : Wrap_wire_proof.t
       }
     [@@deriving compare, sexp, yojson, hash, equal]
@@ -146,7 +146,7 @@ let dummy (type w h r) (_w : w Nat.t) (h : h Nat.t)
                     ; gamma = chal ()
                     ; zeta = scalar_chal ()
                     ; joint_combiner = None
-                    ; feature_flags = Plonk_types.Features.none_bool
+                    ; feature_flags = Kimchi_backend_common.Plonk_types.Features.none_bool
                     }
                 }
             ; sponge_digest_before_evaluations =
@@ -194,11 +194,11 @@ let dummy (type w h r) (_w : w Nat.t) (h : h Nat.t)
           }
     ; prev_evals =
         (let e =
-           Plonk_types.Evals.map Evaluation_lengths.default ~f:(fun n ->
+           Kimchi_backend_common.Plonk_types.Evals.map Evaluation_lengths.default ~f:(fun n ->
                (tick_arr n, tick_arr n) )
          in
          let ex =
-           { Plonk_types.All_evals.With_public_input.public_input =
+           { Kimchi_backend_common.Plonk_types.All_evals.With_public_input.public_input =
                ([| tick () |], [| tick () |])
            ; evals = e
            }
@@ -252,7 +252,7 @@ module Make (W : Nat.Intf) (MLMB : Nat.Intf) = struct
           }
       }
     in
-    let prev_evals : _ Plonk_types.All_evals.Stable.V1.t =
+    let prev_evals : _ Kimchi_backend_common.Plonk_types.All_evals.Stable.V1.t =
       { evals =
           { prev_evals.evals with
             public_input =
@@ -287,7 +287,7 @@ module Make (W : Nat.Intf) (MLMB : Nat.Intf) = struct
           }
       }
     in
-    let prev_evals : _ Plonk_types.All_evals.t =
+    let prev_evals : _ Kimchi_backend_common.Plonk_types.All_evals.t =
       { evals =
           { public_input =
               (let x1, x2 = prev_evals.evals.public_input in

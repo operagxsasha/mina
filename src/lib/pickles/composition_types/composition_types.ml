@@ -1,4 +1,4 @@
-open Pickles_types
+open Kimchi_backend_types
 module Scalar_challenge = Kimchi_backend_common.Scalar_challenge
 module Bulletproof_challenge = Bulletproof_challenge
 module Branch_data = Branch_data
@@ -57,7 +57,7 @@ module Wrap = struct
                 ; gamma : 'challenge
                 ; zeta : 'scalar_challenge
                 ; joint_combiner : 'scalar_challenge option
-                ; feature_flags : 'bool Plonk_types.Features.Stable.V1.t
+                ; feature_flags : 'bool Kimchi_backend_common.Plonk_types.Features.Stable.V1.t
                 }
               [@@deriving sexp, compare, yojson, hlist, hash, equal]
 
@@ -81,12 +81,12 @@ module Wrap = struct
               ; gamma : 'challenge
               ; zeta : 'scalar_challenge
               ; joint_combiner : ('scalar_challenge, 'bool) Opt.t
-              ; feature_flags : 'bool Plonk_types.Features.t
+              ; feature_flags : 'bool Kimchi_backend_common.Plonk_types.Features.t
               }
           end
         end
 
-        open Pickles_types
+        open Kimchi_backend_types
 
         module In_circuit = struct
           (** All scalar values deferred by a verifier circuit.
@@ -111,7 +111,7 @@ module Wrap = struct
             ; zeta_to_domain_size : 'fp
             ; perm : 'fp
                   (** scalar used on one of the permutation polynomial commitments. *)
-            ; feature_flags : 'bool Plonk_types.Features.t
+            ; feature_flags : 'bool Kimchi_backend_common.Plonk_types.Features.t
             ; joint_combiner : 'scalar_challenge_opt
             }
           [@@deriving sexp, compare, yojson, hlist, hash, equal, fields]
@@ -135,7 +135,7 @@ module Wrap = struct
           let typ (type fp) ~dummy_scalar_challenge ~challenge ~scalar_challenge
               ~bool
               ~feature_flags:
-                ({ Plonk_types.Features.Full.uses_lookups; _ } as feature_flags)
+                ({ Kimchi_backend_common.Plonk_types.Features.Full.uses_lookups; _ } as feature_flags)
               (fp : (fp, _) Step_impl.Typ.t) =
             Step_impl.Typ.of_hlistable
               [ Scalar_challenge.typ scalar_challenge
@@ -145,8 +145,8 @@ module Wrap = struct
               ; fp
               ; fp
               ; fp
-              ; Plonk_types.Features.typ
-                  ~feature_flags:(Plonk_types.Features.of_full feature_flags)
+              ; Kimchi_backend_common.Plonk_types.Features.typ
+                  ~feature_flags:(Kimchi_backend_common.Plonk_types.Features.of_full feature_flags)
                   bool
               ; Opt.typ uses_lookups ~dummy:dummy_scalar_challenge
                   (Scalar_challenge.typ scalar_challenge)
@@ -530,7 +530,7 @@ module Wrap = struct
       { app_state : 's
             (** The actual application-level state (e.g., for Mina, this is the protocol state which contains the
     merkle root of the ledger, state related to consensus, etc.) *)
-      ; dlog_plonk_index : 'g Plonk_verification_key_evals.t
+      ; dlog_plonk_index : 'g Kimchi_backend_common.Plonk_verification_key_evals.t
             (** The verification key corresponding to the wrap-circuit for this recursive proof system.
           It gets threaded through all the circuits so that the step circuits can verify proofs against
           it.
@@ -736,7 +736,7 @@ module Wrap = struct
         let feature_flags_spec =
           let [ f1; f2; f3; f4; f5; f6; f7; f8 ] =
             (* Ensure that layout is the same *)
-            Plonk_types.Features.to_data feature_flags
+            Kimchi_backend_common.Plonk_types.Features.to_data feature_flags
           in
           let constant x =
             Spec.T.Constant (x, (fun x y -> assert (Bool.equal x y)), B Bool)
@@ -826,7 +826,7 @@ module Wrap = struct
           ; digest
           ; bulletproof_challenges
           ; index
-          ; Plonk_types.Features.to_data feature_flags
+          ; Kimchi_backend_common.Plonk_types.Features.to_data feature_flags
           ; option_map joint_combiner ~f:(fun x -> Hlist.HlistId.[ x ])
           ]
 
@@ -860,7 +860,7 @@ module Wrap = struct
           digest
         in
         let [ branch_data ] = index in
-        let feature_flags = Plonk_types.Features.of_data feature_flags in
+        let feature_flags = Kimchi_backend_common.Plonk_types.Features.of_data feature_flags in
         { proof_state =
             { deferred_values =
                 { xi
@@ -902,7 +902,7 @@ module Step = struct
   module Plonk_polys = Nat.N10
 
   module Bulletproof = struct
-    include Plonk_types.Openings.Bulletproof
+    include Kimchi_backend_common.Plonk_types.Openings.Bulletproof
 
     module Advice = struct
       (** This is data that can be computed in linear time from the proof + statement.
@@ -955,8 +955,6 @@ module Step = struct
                 _ Wrap.Proof_state.Deferred_values.Plonk.Minimal.t ) =
             { alpha; beta; gamma; zeta }
         end
-
-        open Pickles_types
 
         module In_circuit = struct
           (** All scalar values deferred by a verifier circuit.
@@ -1024,7 +1022,7 @@ module Step = struct
                } :
                 _ Wrap.Proof_state.Deferred_values.Plonk.In_circuit.t ) =
             let () =
-              let { Plonk_types.Features.range_check0
+              let { Kimchi_backend_common.Plonk_types.Features.range_check0
                   ; range_check1
                   ; foreign_field_add
                   ; foreign_field_mul
@@ -1328,7 +1326,7 @@ module Step = struct
     end [@@warning "-45"]
 
     let[@warning "-60"] wrap_typ (type n) ~assert_16_bits
-        (proofs_verified : (Opt.Flag.t Plonk_types.Features.t, n) Vector.t) fq :
+        (proofs_verified : (Opt.Flag.t Kimchi_backend_common.Plonk_types.Features.t, n) Vector.t) fq :
         (((_, _) Vector.t, _) t, ((_, _) Vector.t, _) t) Wrap_impl.Typ.t =
       let per_proof _ = Per_proof.wrap_typ fq ~assert_16_bits in
       let unfinalized_proofs =

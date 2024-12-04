@@ -1,4 +1,4 @@
-open Pickles_types
+open Kimchi_backend_types
 open Core_kernel
 open Import
 open Backend
@@ -124,10 +124,11 @@ module Step = struct
     Types.Step.Proof_state.Per_proof.In_circuit.t
 
   type 'proofs_verified statement =
-    ( (unfinalized_proof, 'proofs_verified) Pickles_types.Vector.t
+    ( (unfinalized_proof, 'proofs_verified) Kimchi_backend_types.Vector.t
     , Import.Types.Digest.Constant.t
-    , (Import.Types.Digest.Constant.t, 'proofs_verified) Pickles_types.Vector.t
-    )
+    , ( Import.Types.Digest.Constant.t
+      , 'proofs_verified )
+      Kimchi_backend_types.Vector.t )
     Import.Types.Step.Statement.t
 
   type unfinalized_proof_var =
@@ -136,17 +137,17 @@ module Step = struct
     , Other_field.t Shifted_value.Type2.t
     , ( Field.t Scalar_challenge.t Bulletproof_challenge.t
       , Tock.Rounds.n )
-      Pickles_types.Vector.t
+      Kimchi_backend_types.Vector.t
     , Field.t
     , Boolean.var )
     Types.Step.Proof_state.Per_proof.In_circuit.t
 
   type 'proofs_verified statement_var =
-    ( (unfinalized_proof_var, 'proofs_verified) Pickles_types.Vector.t
+    ( (unfinalized_proof_var, 'proofs_verified) Kimchi_backend_types.Vector.t
     , Impl.field Snarky_backendless.Cvar.t
     , ( Impl.field Snarky_backendless.Cvar.t
       , 'proofs_verified )
-      Pickles_types.Vector.t )
+      Kimchi_backend_types.Vector.t )
     Import.Types.Step.Statement.t
 
   let input ~proofs_verified =
@@ -235,8 +236,8 @@ module Wrap = struct
 
   let input
       ~feature_flags:
-        ({ Plonk_types.Features.Full.uses_lookups; _ } as feature_flags) () =
-    let feature_flags = Plonk_types.Features.of_full feature_flags in
+        ({ Kimchi_backend_common.Plonk_types.Features.Full.uses_lookups; _ } as feature_flags) () =
+    let feature_flags = Kimchi_backend_common.Plonk_types.Features.of_full feature_flags in
     let lookup =
       { Types.Wrap.Lookup_parameters.use = uses_lookups
       ; zero =

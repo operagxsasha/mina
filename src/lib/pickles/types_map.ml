@@ -1,5 +1,5 @@
 open Core_kernel
-open Pickles_types
+open Kimchi_backend_types
 open Import
 open Backend
 
@@ -16,9 +16,9 @@ module Basic = struct
     ; public_input : ('var, 'value) Impls.Step.Typ.t
     ; branches : 'n2 Nat.t
     ; wrap_domains : Domains.t
-    ; wrap_key : Tick.Inner_curve.Affine.t array Plonk_verification_key_evals.t
+    ; wrap_key : Tick.Inner_curve.Affine.t array Kimchi_backend_common.Plonk_verification_key_evals.t
     ; wrap_vk : Impls.Wrap.Verification_key.t
-    ; feature_flags : Opt.Flag.t Plonk_types.Features.Full.t
+    ; feature_flags : Opt.Flag.t Kimchi_backend_common.Plonk_types.Features.Full.t
     ; num_chunks : int
     ; zk_rows : int
     }
@@ -40,7 +40,7 @@ module Side_loaded = struct
     type ('var, 'value, 'n1, 'n2) t =
       { max_proofs_verified : (module Nat.Add.Intf with type n = 'n1)
       ; public_input : ('var, 'value) Impls.Step.Typ.t
-      ; feature_flags : Opt.Flag.t Plonk_types.Features.Full.t
+      ; feature_flags : Opt.Flag.t Kimchi_backend_common.Plonk_types.Features.Full.t
       ; branches : 'n2 Nat.t
       ; num_chunks : int
       ; zk_rows : int
@@ -70,7 +70,7 @@ module Side_loaded = struct
       match ephemeral with
       | Some { index = `In_prover i | `In_both (i, _) } ->
           let wrap_index =
-            Plonk_verification_key_evals.map i.wrap_index ~f:(fun x -> [| x |])
+            Kimchi_backend_common.Plonk_verification_key_evals.map i.wrap_index ~f:(fun x -> [| x |])
           in
           (wrap_index, i.wrap_vk)
       | _ ->
@@ -97,7 +97,7 @@ module Compiled = struct
           (* For each branch in this rule, how many predecessor proofs does it have? *)
     ; wrap_domains : Domains.t
     ; step_domains : (Domains.t, 'branches) Vector.t
-    ; feature_flags : Opt.Flag.t Plonk_types.Features.Full.t
+    ; feature_flags : Opt.Flag.t Kimchi_backend_common.Plonk_types.Features.Full.t
     ; num_chunks : int
     ; zk_rows : int
     }
@@ -113,12 +113,12 @@ module Compiled = struct
           (* For each branch in this rule, how many predecessor proofs does it have? *)
     ; public_input : ('a_var, 'a_value) Impls.Step.Typ.t
     ; wrap_key :
-        Tick.Inner_curve.Affine.t array Plonk_verification_key_evals.t Promise.t
+        Tick.Inner_curve.Affine.t array Kimchi_backend_common.Plonk_verification_key_evals.t Promise.t
         Lazy.t
     ; wrap_vk : Impls.Wrap.Verification_key.t Promise.t Lazy.t
     ; wrap_domains : Domains.t
     ; step_domains : (Domains.t Promise.t, 'branches) Vector.t
-    ; feature_flags : Opt.Flag.t Plonk_types.Features.Full.t
+    ; feature_flags : Opt.Flag.t Kimchi_backend_common.Plonk_types.Features.Full.t
     ; num_chunks : int
     ; zk_rows : int
     }
@@ -161,13 +161,13 @@ module For_step = struct
     ; proofs_verifieds :
         [ `Known of (Impls.Step.Field.t, 'branches) Vector.t | `Side_loaded ]
     ; public_input : ('a_var, 'a_value) Impls.Step.Typ.t
-    ; wrap_key : inner_curve_var array Plonk_verification_key_evals.t
+    ; wrap_key : inner_curve_var array Kimchi_backend_common.Plonk_verification_key_evals.t
     ; wrap_domain :
         [ `Known of Domain.t
         | `Side_loaded of
           Impls.Step.field Pickles_base.Proofs_verified.One_hot.Checked.t ]
     ; step_domains : [ `Known of (Domains.t, 'branches) Vector.t | `Side_loaded ]
-    ; feature_flags : Opt.Flag.t Plonk_types.Features.Full.t
+    ; feature_flags : Opt.Flag.t Kimchi_backend_common.Plonk_types.Features.Full.t
     ; num_chunks : int
     ; zk_rows : int
     }
@@ -193,7 +193,7 @@ module For_step = struct
     in
     let T = Nat.eq_exn branches Side_loaded_verification_key.Max_branches.n in
     let wrap_key =
-      Plonk_verification_key_evals.map index.wrap_index ~f:(fun x -> [| x |])
+      Kimchi_backend_common.Plonk_verification_key_evals.map index.wrap_index ~f:(fun x -> [| x |])
     in
     { branches
     ; max_proofs_verified
@@ -210,7 +210,7 @@ module For_step = struct
   module Optional_wrap_key = struct
     type 'branches known =
       { wrap_key :
-          Tick.Inner_curve.Affine.t array Plonk_verification_key_evals.t
+          Tick.Inner_curve.Affine.t array Kimchi_backend_common.Plonk_verification_key_evals.t
       ; step_domains : (Domains.t, 'branches) Vector.t
       }
 
@@ -238,7 +238,7 @@ module For_step = struct
         `Known (Vector.map proofs_verifieds ~f:Impls.Step.Field.of_int)
     ; public_input
     ; wrap_key =
-        Plonk_verification_key_evals.map wrap_key
+        Kimchi_backend_common.Plonk_verification_key_evals.map wrap_key
           ~f:(Array.map ~f:Step_main_inputs.Inner_curve.constant)
     ; wrap_domain = `Known wrap_domains.h
     ; step_domains = `Known step_domains
@@ -321,7 +321,7 @@ let public_input :
 
 let feature_flags :
     type var value.
-    (var, value, _, _) Tag.t -> Opt.Flag.t Plonk_types.Features.Full.t =
+    (var, value, _, _) Tag.t -> Opt.Flag.t Kimchi_backend_common.Plonk_types.Features.Full.t =
  fun tag ->
   match tag.kind with
   | Compiled ->

@@ -1,5 +1,5 @@
 open Core_kernel
-open Pickles_types
+open Kimchi_backend_types
 open Pickles_base
 module Scalars = Scalars
 module Domain = Domain
@@ -11,7 +11,7 @@ let zk_rows_by_default = 3
 
 type 'field plonk_domain =
   < vanishing_polynomial : 'field -> 'field
-  ; shifts : 'field Plonk_types.Shifts.t
+  ; shifts : 'field Kimchi_backend_common.Plonk_types.Shifts.t
   ; generator : 'field >
 
 type 'field domain = < size : 'field ; vanishing_polynomial : 'field -> 'field >
@@ -98,21 +98,21 @@ let actual_evaluation (type f) (module Field : Field_intf with type t = f)
   | [] ->
       Field.of_int 0
 
-let evals_of_split_evals field ~zeta ~zetaw (es : _ Plonk_types.Evals.t) ~rounds
+let evals_of_split_evals field ~zeta ~zetaw (es : _ Kimchi_backend_common.Plonk_types.Evals.t) ~rounds
     =
   let e = Fn.flip (actual_evaluation field ~rounds) in
-  Plonk_types.Evals.map es ~f:(fun (x1, x2) -> (e zeta x1, e zetaw x2))
+  Kimchi_backend_common.Plonk_types.Evals.map es ~f:(fun (x1, x2) -> (e zeta x1, e zetaw x2))
 
 open Composition_types.Wrap.Proof_state.Deferred_values.Plonk
 
-type 'bool all_feature_flags = 'bool Lazy.t Plonk_types.Features.Full.t
+type 'bool all_feature_flags = 'bool Lazy.t Kimchi_backend_common.Plonk_types.Features.Full.t
 
 let expand_feature_flags (type boolean)
     (module B : Bool_intf with type t = boolean)
-    (features : boolean Plonk_types.Features.t) : boolean all_feature_flags =
+    (features : boolean Kimchi_backend_common.Plonk_types.Features.t) : boolean all_feature_flags =
   features
-  |> Plonk_types.Features.map ~f:(fun x -> lazy x)
-  |> Plonk_types.Features.to_full
+  |> Kimchi_backend_common.Plonk_types.Features.map ~f:(fun x -> lazy x)
+  |> Kimchi_backend_common.Plonk_types.Features.to_full
        ~or_:(fun x y -> lazy B.(Lazy.force x ||| Lazy.force y))
        ~any:(fun x -> lazy (B.any (List.map ~f:Lazy.force x)))
 
@@ -150,7 +150,7 @@ let lookup_tables_used feature_flags =
 let get_feature_flag (feature_flags : _ all_feature_flags)
     (feature : Kimchi_types.feature_flag) =
   let lazy_flag =
-    Plonk_types.Features.Full.get_feature_flag feature_flags feature
+    Kimchi_backend_common.Plonk_types.Features.Full.get_feature_flag feature_flags feature
   in
   Option.map ~f:Lazy.force lazy_flag
 
@@ -158,7 +158,7 @@ let scalars_env (type boolean t) (module B : Bool_intf with type t = boolean)
     (module F : Field_with_if_intf with type t = t and type bool = boolean)
     ~endo ~mds ~field_of_hex ~domain ~zk_rows ~srs_length_log2
     ({ alpha; beta; gamma; zeta; joint_combiner; feature_flags } :
-      (t, _, boolean) Minimal.t ) (e : (_ * _, _) Plonk_types.Evals.In_circuit.t)
+      (t, _, boolean) Minimal.t ) (e : (_ * _, _) Kimchi_backend_common.Plonk_types.Evals.In_circuit.t)
     =
   let feature_flags = expand_feature_flags (module B) feature_flags in
   let witness = Vector.to_array e.w in
@@ -349,8 +349,8 @@ module Make (Shifted_value : Shifted_value.S) (Sc : Scalars.S) = struct
   let ft_eval0 (type t) (module F : Field_intf with type t = t) ~domain
       ~(env : t Scalars.Env.t)
       ({ alpha = _; beta; gamma; zeta; joint_combiner = _; feature_flags = _ } :
-        _ Minimal.t ) (e : (_ * _, _) Plonk_types.Evals.In_circuit.t) p_eval0 =
-    let open Plonk_types.Evals.In_circuit in
+        _ Minimal.t ) (e : (_ * _, _) Kimchi_backend_common.Plonk_types.Evals.In_circuit.t) p_eval0 =
+    let open Kimchi_backend_common.Plonk_types.Evals.In_circuit in
     let e0 field = fst (field e) in
     let e1 field = snd (field e) in
     let e0_s = Vector.map e.s ~f:fst in
@@ -371,7 +371,7 @@ module Make (Shifted_value : Shifted_value.S) (Sc : Scalars.S) = struct
     let w0 = Vector.to_array e.w |> Array.map ~f:fst in
     let ft_eval0 =
       let a0 = alpha_pow perm_alpha0 in
-      let w_n = w0.(Nat.to_int Plonk_types.Permuts_minus_1.n) in
+      let w_n = w0.(Nat.to_int Kimchi_backend_common.Plonk_types.Permuts_minus_1.n) in
       let init = (w_n + gamma) * e1 z * a0 * zkp in
       (* TODO: This shares some computation with the permutation scalar in
          derive_plonk. Could share between them. *)
@@ -411,9 +411,9 @@ module Make (Shifted_value : Shifted_value.S) (Sc : Scalars.S) = struct
          ; feature_flags = actual_feature_flags
          } :
           _ Minimal.t )
-        (e : (_ * _, _) Plonk_types.Evals.In_circuit.t)
-          (*((e0, e1) : _ Plonk_types.Evals.In_circuit.t Double.t) *) ->
-      let open Plonk_types.Evals.In_circuit in
+        (e : (_ * _, _) Kimchi_backend_common.Plonk_types.Evals.In_circuit.t)
+          (*((e0, e1) : _ Kimchi_backend_common.Plonk_types.Evals.In_circuit.t Double.t) *) ->
+      let open Kimchi_backend_common.Plonk_types.Evals.In_circuit in
       let e1 field = snd (field e) in
       let zkp = env.zk_polynomial in
       let alpha_pow = env.alpha_pow in

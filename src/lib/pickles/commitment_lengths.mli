@@ -8,7 +8,7 @@
 (** [default] returns a tuple of naturals [(length_w, length_z, length_t)]
     encoding at the type level the number of polynomials we must commit to.
     - [length_w] is the number of wires. It must be in line with
-      {Plonk_types.Commons}.
+      {Kimchi_backend_common.Plonk_types.Commons}.
     - [length_z] is the permutation polynomial
     - [length_t] is the quotient polynomial
 
@@ -17,7 +17,7 @@
 *)
 val default :
      num_chunks:int
-  -> ( int Pickles_types.Plonk_types.Columns_vec.t
+  -> ( int Kimchi_backend_common.Plonk_types.Columns_vec.t
      , int
      , int )
-     Pickles_types.Plonk_types.Messages.Poly.t
+     Kimchi_backend_common.Plonk_types.Messages.Poly.t

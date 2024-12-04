@@ -2,8 +2,8 @@ module S = Sponge
 open Core_kernel
 open Util
 module SC = Scalar_challenge
-open Pickles_types
-open Plonk_types
+open Kimchi_backend_types
+open Kimchi_backend_common.Plonk_types
 open Tuple_lib
 open Import
 
@@ -14,8 +14,8 @@ module G = struct
   (* given [chals], compute
      \prod_i (1 + chals.(i) * x^{2^{k - 1 - i}}) *)
   let challenge_polynomial (type a)
-      (module M : Pickles_types.Shifted_value.Field_intf with type t = a) chals
-      : (a -> a) Staged.t =
+      (module M : Kimchi_backend_types.Shifted_value.Field_intf with type t = a)
+      chals : (a -> a) Staged.t =
     stage (fun pt ->
         let k = Array.length chals in
         let pow_two_pows =
@@ -86,7 +86,8 @@ struct
 
       let typ = Impls.Wrap.Other_field.typ_unchecked
 
-      let _absorb_shifted sponge (x : t Pickles_types.Shifted_value.Type1.t) =
+      let _absorb_shifted sponge
+          (x : t Kimchi_backend_types.Shifted_value.Type1.t) =
         match x with Shifted_value x -> Sponge.absorb sponge x
     end
   end
@@ -196,7 +197,7 @@ struct
   module One_hot_vector = One_hot_vector.Make (Impl)
 
   type ('comm, 'comm_opt) index' =
-    ('comm, 'comm_opt) Plonk_verification_key_evals.Step.t
+    ('comm, 'comm_opt) Kimchi_backend_common.Plonk_verification_key_evals.Step.t
 
   (* Mask out the given vector of indices with the given one-hot vector *)
   let choose_key :
@@ -214,7 +215,7 @@ struct
         (bs :> (Boolean.var, n) Vector.t)
         keys
         ~f:(fun b key ->
-          Plonk_verification_key_evals.Step.map key
+          Kimchi_backend_common.Plonk_verification_key_evals.Step.map key
             ~f:(Array.map ~f:(fun g -> Double.map g ~f:(( * ) (b :> t))))
             ~f_opt:(function
               (* Here, we split the 3 variants into 3 separate accumulators. This
@@ -234,11 +235,11 @@ struct
                   ([ (b, x) ], [], []) ) )
       |> Vector.reduce_exn
            ~f:
-             (Plonk_verification_key_evals.Step.map2
+             (Kimchi_backend_common.Plonk_verification_key_evals.Step.map2
                 ~f:(Array.map2_exn ~f:(Double.map2 ~f:( + )))
                 ~f_opt:(fun (yes_1, maybe_1, no_1) (yes_2, maybe_2, no_2) ->
                   (yes_1 @ yes_2, maybe_1 @ maybe_2, no_1 @ no_2) ) )
-      |> Plonk_verification_key_evals.Step.map ~f:Fn.id ~f_opt:(function
+      |> Kimchi_backend_common.Plonk_verification_key_evals.Step.map ~f:Fn.id ~f_opt:(function
            | [], [], _nones ->
                (* We only have `Nothing`s, so we can emit exactly `Nothing`
                   without further computation.
@@ -308,7 +309,7 @@ struct
                       ~f:(Array.map2_exn ~f:(Double.map2 ~f:( + )))
                in
                Opt.Maybe (is_yes, sum) )
-      |> Plonk_verification_key_evals.Step.map
+      |> Kimchi_backend_common.Plonk_verification_key_evals.Step.map
            ~f:(fun g -> Array.map ~f:(Double.map ~f:(Util.seal (module Impl))) g)
            ~f_opt:(function
              | Opt.Nothing ->
@@ -689,8 +690,8 @@ struct
             Array.iter2_exn ~f:Field.Assert.equal
               (fst @@ var_to_fields j0)
               (fst @@ var_to_fields j1)
-        | ( ((Pickles_types.Opt.Just _ | Maybe _ | Nothing) as j0)
-          , ((Pickles_types.Opt.Just _ | Maybe _ | Nothing) as j1) ) ->
+        | ( ((Kimchi_backend_types.Opt.Just _ | Maybe _ | Nothing) as j0)
+          , ((Kimchi_backend_types.Opt.Just _ | Maybe _ | Nothing) as j1) ) ->
             let sexp_of t =
               Sexp.to_string
               @@ Types.Opt.sexp_of_t
@@ -715,8 +716,8 @@ struct
                         ({ inner = t2 } : Scalar_challenge.t) ->
         Field.Assert.equal t1 t2 )
 
-  let index_to_field_elements ~g (m : _ Plonk_verification_key_evals.Step.t) =
-    let { Plonk_verification_key_evals.Step.sigma_comm
+  let index_to_field_elements ~g (m : _ Kimchi_backend_common.Plonk_verification_key_evals.Step.t) =
+    let { Kimchi_backend_common.Plonk_verification_key_evals.Step.sigma_comm
         ; coefficients_comm
         ; generic_comm
         ; psm_comm
@@ -740,7 +741,7 @@ struct
         } =
       m
     in
-    let open Pickles_types in
+    let open Kimchi_backend_types in
     let g_opt = Opt.map ~f:g in
     List.map
       ( Vector.to_list sigma_comm
@@ -777,9 +778,9 @@ struct
       final state when using the sponge.
   *)
   let simulate_optional_sponge_with_alignment (sponge : Sponge.t) ~f = function
-    | Pickles_types.Opt.Nothing ->
-        Pickles_types.Opt.Nothing
-    | Pickles_types.Opt.Maybe (b, x) ->
+    | Kimchi_backend_types.Opt.Nothing ->
+        Kimchi_backend_types.Opt.Nothing
+    | Kimchi_backend_types.Opt.Maybe (b, x) ->
         (* Cache the sponge state before *)
         let sponge_state_before = sponge.sponge_state in
         let state_before = Array.copy sponge.state in
@@ -800,14 +801,14 @@ struct
               Field.if_ b ~then_ ~else_ )
         in
         sponge.state <- state ;
-        Pickles_types.Opt.Maybe (b, res)
-    | Pickles_types.Opt.Just x ->
-        Pickles_types.Opt.Just (f sponge x)
+        Kimchi_backend_types.Opt.Maybe (b, res)
+    | Kimchi_backend_types.Opt.Just x ->
+        Kimchi_backend_types.Opt.Just (f sponge x)
 
   let incrementally_verify_proof (type b)
       (module Max_proofs_verified : Nat.Add.Intf with type n = b)
       ~actual_proofs_verified_mask ~step_domains ~srs
-      ~verification_key:(m : (_ array, _) Plonk_verification_key_evals.Step.t)
+      ~verification_key:(m : (_ array, _) Kimchi_backend_common.Plonk_verification_key_evals.Step.t)
       ~xi ~sponge
       ~(public_input :
          [ `Field of Field.t * Boolean.var | `Packed_bits of Field.t * int ]
@@ -835,7 +836,7 @@ struct
                           List.to_array (Inner_curve.to_field_elements z) ) )
                    m )
                 ~f:(fun x ->
-                  let (_ : (unit, _) Pickles_types.Opt.t) =
+                  let (_ : (unit, _) Kimchi_backend_types.Opt.t) =
                     simulate_optional_sponge_with_alignment index_sponge x
                       ~f:(fun sponge x ->
                         Array.iter ~f:(Sponge.absorb sponge) x )
@@ -940,15 +941,15 @@ struct
           | Nothing
           | Maybe (_, { runtime = Nothing; _ })
           | Just { runtime = Nothing; _ } ->
-              Pickles_types.Opt.Nothing
+              Kimchi_backend_types.Opt.Nothing
           | Maybe (b_lookup, { runtime = Maybe (b_runtime, runtime); _ }) ->
               let b = Boolean.( &&& ) b_lookup b_runtime in
-              Pickles_types.Opt.Maybe (b, runtime)
+              Kimchi_backend_types.Opt.Maybe (b, runtime)
           | Maybe (b, { runtime = Just runtime; _ })
           | Just { runtime = Maybe (b, runtime); _ } ->
-              Pickles_types.Opt.Maybe (b, runtime)
+              Kimchi_backend_types.Opt.Maybe (b, runtime)
           | Just { runtime = Just runtime; _ } ->
-              Pickles_types.Opt.Just runtime
+              Kimchi_backend_types.Opt.Just runtime
         in
         let absorb_runtime_tables () =
           match runtime_comm with
@@ -1199,9 +1200,9 @@ struct
         in
         let lookup_sorted =
           let lookup_sorted_minus_1 =
-            Nat.to_int Plonk_types.Lookup_sorted_minus_1.n
+            Nat.to_int Kimchi_backend_common.Plonk_types.Lookup_sorted_minus_1.n
           in
-          Vector.init Plonk_types.Lookup_sorted.n ~f:(fun i ->
+          Vector.init Kimchi_backend_common.Plonk_types.Lookup_sorted.n ~f:(fun i ->
               match messages.lookup with
               | Types.Opt.Nothing ->
                   Types.Opt.Nothing
@@ -1233,7 +1234,7 @@ struct
         let alpha = sample_scalar () in
         let t_comm :
             (Inputs.Impl.Field.t * Inputs.Impl.Field.t)
-            Pickles_types__Plonk_types.Poly_comm.Without_degree_bound.t =
+            Kimchi_backend_common.Plonk_types.Poly_comm.Without_degree_bound.t =
           messages.t_comm
         in
         absorb_g t_comm ;
@@ -1275,7 +1276,7 @@ struct
                 ~add:(Ops.add_fast ?check_finite:None)
                 ~scale:scale_fast ~negate:Inner_curve.negate
                 ~verification_key:
-                  (Plonk_verification_key_evals.Step.forget_optional_commitments
+                  (Kimchi_backend_common.Plonk_verification_key_evals.Step.forget_optional_commitments
                      m )
                 ~plonk ~t_comm )
         in
@@ -1288,10 +1289,10 @@ struct
              It should be sufficient to fork the sponge after squeezing beta_3 and then to absorb
              the combined inner product.
           *)
-          let len_1, len_1_add = Plonk_types.(Columns.add Permuts_minus_1.n) in
-          let len_2, len_2_add = Plonk_types.(Columns.add len_1) in
+          let len_1, len_1_add = Kimchi_backend_common.Plonk_types.(Columns.add Permuts_minus_1.n) in
+          let len_2, len_2_add = Kimchi_backend_common.Plonk_types.(Columns.add len_1) in
           let _len_3, len_3_add = Nat.N9.add len_2 in
-          let _len_4, len_4_add = Nat.N6.add Plonk_types.Lookup_sorted.n in
+          let _len_4, len_4_add = Nat.N6.add Kimchi_backend_common.Plonk_types.Lookup_sorted.n in
           let len_5, len_5_add =
             (* NB: Using explicit 11 because we can't get add on len_4 *)
             Nat.N11.add Nat.N8.n
@@ -1312,7 +1313,7 @@ struct
                all but last sigma_comm
             *)
             Vector.map sg_old ~f:(fun (keep, p) ->
-                Pickles_types.Opt.Maybe (keep, [| p |]) )
+                Kimchi_backend_types.Opt.Maybe (keep, [| p |]) )
             |> append_chain
                  (snd (Max_proofs_verified.add len_6))
                  ( [ x_hat
@@ -1330,7 +1331,7 @@ struct
                          (Vector.append m.coefficients_comm sigma_comm_init
                             len_1_add )
                          len_2_add )
-                 |> Vector.map ~f:Pickles_types.Opt.just
+                 |> Vector.map ~f:Kimchi_backend_types.Opt.just
                  |> append_chain len_6_add
                       ( [ m.range_check0_comm
                         ; m.range_check1_comm
@@ -1341,8 +1342,8 @@ struct
                         ]
                       |> append_chain len_4_add lookup_sorted
                       |> append_chain len_5_add
-                           [ Pickles_types.Opt.map messages.lookup ~f:(fun l ->
-                                 l.aggreg )
+                           [ Kimchi_backend_types.Opt.map messages.lookup
+                               ~f:(fun l -> l.aggreg)
                            ; lookup_table_comm
                            ; runtime_comm
                            ; m.runtime_tables_selector
@@ -1360,7 +1361,7 @@ struct
             ~polynomials:
               ( Vector.map without_degree_bound
                   ~f:
-                    (Pickles_types.Opt.map
+                    (Kimchi_backend_types.Opt.map
                        ~f:(Array.map ~f:(fun x -> `Finite x)) )
               , [] )
         in
@@ -1383,11 +1384,11 @@ struct
 
   let _mask_evals (type n)
       ~(lengths :
-         (int, n) Pickles_types.Vector.t Pickles_types.Plonk_types.Evals.t )
-      (choice : n One_hot_vector.t)
-      (e : Field.t array Pickles_types.Plonk_types.Evals.t) :
-      (Boolean.var * Field.t) array Pickles_types.Plonk_types.Evals.t =
-    Pickles_types.Plonk_types.Evals.map2 lengths e ~f:(fun lengths e ->
+         (int, n) Kimchi_backend_types.Vector.t
+         Kimchi_backend_common.Plonk_types.Evals.t ) (choice : n One_hot_vector.t)
+      (e : Field.t array Kimchi_backend_common.Plonk_types.Evals.t) :
+      (Boolean.var * Field.t) array Kimchi_backend_common.Plonk_types.Evals.t =
+    Kimchi_backend_common.Plonk_types.Evals.map2 lengths e ~f:(fun lengths e ->
         Array.zip_exn (mask lengths choice) e )
 
   let compute_challenges ~scalar chals =
@@ -1436,7 +1437,7 @@ struct
             failwith "empty list" )
 
   let _shift1 =
-    Pickles_types.Shifted_value.Type1.Shift.(
+    Kimchi_backend_types.Shifted_value.Type1.Shift.(
       map ~f:Field.constant (create (module Field.Constant)))
 
   let shift2 =
@@ -1473,7 +1474,7 @@ struct
         , _ Shifted_value.Type2.t
         , _ )
         Types.Step.Proof_state.Deferred_values.In_circuit.t )
-      { Plonk_types.All_evals.In_circuit.ft_eval1; evals } =
+      { Kimchi_backend_common.Plonk_types.All_evals.In_circuit.ft_eval1; evals } =
     let module Plonk = Types.Step.Proof_state.Deferred_values.Plonk in
     let T = Proofs_verified.eq in
     (* You use the NEW bulletproof challenges to check b. Not the old ones. *)
@@ -1617,12 +1618,13 @@ struct
                      | Nothing ->
                          [||]
                      | Just a ->
-                         Array.map a ~f:Pickles_types.Opt.just
+                         Array.map a ~f:Kimchi_backend_types.Opt.just
                      | Maybe (b, a) ->
-                         Array.map a ~f:(Pickles_types.Opt.maybe b) )
+                         Array.map a ~f:(Kimchi_backend_types.Opt.maybe b) )
               in
               let sg_evals =
-                Vector.map sg_evals ~f:(fun x -> [| Pickles_types.Opt.just x |])
+                Vector.map sg_evals ~f:(fun x ->
+                    [| Kimchi_backend_types.Opt.just x |] )
                 |> Vector.to_list
                 (* TODO: This was the code before the wrap hack was put in
                    match actual_proofs_verified with
@@ -1640,8 +1642,8 @@ struct
               in
               let v =
                 List.append sg_evals
-                  ( Array.map ~f:Pickles_types.Opt.just x_hat
-                  :: [| Pickles_types.Opt.just ft |]
+                  ( Array.map ~f:Kimchi_backend_types.Opt.just x_hat
+                  :: [| Kimchi_backend_types.Opt.just ft |]
                   :: a )
               in
               Common.combined_evaluation (module Impl) ~xi v
@@ -1683,8 +1685,8 @@ struct
             (module Impl)
             ~env ~shift:shift2
             (Composition_types.Step.Proof_state.Deferred_values.Plonk.In_circuit
-             .to_wrap ~opt_none:Pickles_types.Opt.nothing ~false_:Boolean.false_
-               plonk )
+             .to_wrap ~opt_none:Kimchi_backend_types.Opt.nothing
+               ~false_:Boolean.false_ plonk )
             combined_evals )
     in
     print_bool "xi_correct" xi_correct ;

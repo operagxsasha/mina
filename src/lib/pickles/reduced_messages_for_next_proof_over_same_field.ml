@@ -1,6 +1,6 @@
 open Core_kernel
 open Import
-open Pickles_types
+open Kimchi_backend_types
 open Common
 open Backend
 
@@ -44,7 +44,7 @@ end
 
 module Wrap = struct
   module Challenges_vector = struct
-    module Vector = Pickles_types.Vector
+    module Vector = Kimchi_backend_types.Vector
     module Wrap_bp_vec = Import.Types.Wrap_bp_vec
     open Import
 

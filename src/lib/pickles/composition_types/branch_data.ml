@@ -67,7 +67,7 @@ module Make_str (A : Wire_types.Concrete) = struct
     (* shift domain_log2 over by 2 bits (multiply by 4) *)
     times4 domain_log2
     + project
-        (Pickles_types.Vector.to_list
+        (Kimchi_backend_types.Vector.to_list
            (Proofs_verified.Prefix_mask.there proofs_verified) )
 
   let unpack (type f)
@@ -95,7 +95,7 @@ module Make_str (A : Wire_types.Concrete) = struct
       let open Impl.Field in
       let four = of_int 4 in
       (four * domain_log2)
-      + pack (Pickles_types.Vector.to_list proofs_verified_mask)
+      + pack (Kimchi_backend_types.Vector.to_list proofs_verified_mask)
   end
 
   open Kimchi_pasta_snarky_backend

@@ -1,5 +1,5 @@
 open Core_kernel
-open Pickles_types
+open Kimchi_backend_types
 open Backend
 open Composition_types
 open Common
@@ -8,7 +8,7 @@ let _wrap_domains = Common.wrap_domains
 
 let evals =
   lazy
-    (let open Plonk_types in
+    (let open Kimchi_backend_common.Plonk_types in
     let e =
       Evals.map Evaluation_lengths.default ~f:(fun n ->
           let a () = Array.create ~len:n (Ro.tock ()) in
@@ -23,7 +23,7 @@ let evals =
 
 let evals_combined =
   lazy
-    (Plonk_types.All_evals.map (Lazy.force evals) ~f1:Fn.id
+    (Kimchi_backend_common.Plonk_types.All_evals.map (Lazy.force evals) ~f1:Fn.id
        ~f2:(Array.reduce_exn ~f:Backend.Tock.Field.( + )) )
 
 module Ipa = struct

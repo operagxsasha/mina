@@ -1,5 +1,5 @@
 open Core_kernel
-open Pickles_types
+open Kimchi_backend_types
 open Pickles.Impls.Step
 open Pickles_optional_custom_gates_circuits
 
@@ -224,7 +224,7 @@ let add_tests, get_tests =
   ( (fun name testcases -> tests := (name, testcases) :: !tests)
   , fun () -> List.rev !tests )
 
-let main_body ~(feature_flags : _ Plonk_types.Features.t) () =
+let main_body ~(feature_flags : _ Kimchi_backend_common.Plonk_types.Features.t) () =
   Pickles_optional_custom_gates_circuits.main_body ~feature_flags () ;
   if feature_flags.runtime_tables then main_runtime_table_cfg () ;
   if feature_flags.lookup then (
@@ -298,29 +298,29 @@ let register_feature_test (name, specific_feature_flags) =
   (* Tests activating "maybe on" logic *)
   register_test
     (Printf.sprintf "%s (maybe)" name)
-    specific_feature_flags Plonk_types.Features.none_bool
+    specific_feature_flags Kimchi_backend_common.Plonk_types.Features.none_bool
 
 let () =
   let configurations =
-    [ ("xor", Plonk_types.Features.{ none_bool with xor = true })
+    [ ("xor", Kimchi_backend_common.Plonk_types.Features.{ none_bool with xor = true })
     ; ( "range check 0"
-      , Plonk_types.Features.{ none_bool with range_check0 = true } )
+      , Kimchi_backend_common.Plonk_types.Features.{ none_bool with range_check0 = true } )
     ; ( "range check 1"
-      , Plonk_types.Features.{ none_bool with range_check1 = true } )
-    ; ("rot", Plonk_types.Features.{ none_bool with rot = true })
+      , Kimchi_backend_common.Plonk_types.Features.{ none_bool with range_check1 = true } )
+    ; ("rot", Kimchi_backend_common.Plonk_types.Features.{ none_bool with rot = true })
     ; ( "foreign field addition"
-      , Plonk_types.Features.{ none_bool with foreign_field_add = true } )
+      , Kimchi_backend_common.Plonk_types.Features.{ none_bool with foreign_field_add = true } )
     ; ( "foreign field multiplication"
-      , Plonk_types.Features.{ none_bool with foreign_field_mul = true } )
+      , Kimchi_backend_common.Plonk_types.Features.{ none_bool with foreign_field_mul = true } )
     ; ( "fixed lookup tables"
-      , Plonk_types.Features.{ none_bool with lookup = true } )
+      , Kimchi_backend_common.Plonk_types.Features.{ none_bool with lookup = true } )
     ; ( "runtime+fixed lookup tables"
-      , Plonk_types.Features.
+      , Kimchi_backend_common.Plonk_types.Features.
           { none_bool with lookup = true; runtime_tables = true } )
     ]
   in
   List.iter ~f:register_feature_test configurations ;
   register_test "different sizes of lookup"
-    Plonk_types.Features.{ none_bool with foreign_field_mul = true }
-    Plonk_types.Features.{ none_bool with xor = true } ;
+    Kimchi_backend_common.Plonk_types.Features.{ none_bool with foreign_field_mul = true }
+    Kimchi_backend_common.Plonk_types.Features.{ none_bool with xor = true } ;
   Alcotest.run "Custom gates" (get_tests ())

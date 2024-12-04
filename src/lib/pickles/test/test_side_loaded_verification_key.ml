@@ -8,7 +8,7 @@
 *)
 
 module SLV_key = Pickles__Side_loaded_verification_key
-open Pickles_types
+open Kimchi_backend_types
 
 let input_size w =
   (* This should be an affine function in [a]. *)
@@ -28,7 +28,7 @@ let test_input_size () =
     ~f:(fun n ->
       Alcotest.(check int)
         "input size" (input_size n)
-        (let (T a) = Pickles_types.Nat.of_int n in
+        (let (T a) = Kimchi_backend_types.Nat.of_int n in
          let (T (Typ typ, _conv, _conv_inv)) =
            Impls.Step.input ~proofs_verified:a
          in

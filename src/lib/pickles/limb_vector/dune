@@ -19,7 +19,7 @@
    ;; local libraries
    snarky.backendless
    pickles.backend
-   pickles_types
+   kimchi_backend_types
    kimchi_pasta
    kimchi_pasta.basic
    ppx_version.runtime

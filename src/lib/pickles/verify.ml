@@ -1,5 +1,5 @@
 module SC = Scalar_challenge
-open Pickles_types
+open Kimchi_backend_types
 open Common
 open Import
 
@@ -65,7 +65,7 @@ let verify_heterogenous (ts : Instance.t list) =
           in
           let exception Is_chunked in
           match
-            Pickles_types.Plonk_types.Evals.map evals.evals.evals
+            Kimchi_backend_common.Plonk_types.Evals.map evals.evals.evals
               ~f:(fun (x, y) ->
                 if
                   Array.length x > expected_num_chunks
@@ -84,7 +84,7 @@ let verify_heterogenous (ts : Instance.t list) =
           , non_chunking ) ;
         check
           ( lazy "feature flags are consistent with evaluations"
-          , Pickles_types.Plonk_types.Evals.validate_feature_flags
+          , Kimchi_backend_common.Plonk_types.Evals.validate_feature_flags
               ~feature_flags:proof_state.deferred_values.plonk.feature_flags
               evals.evals.evals ) ;
         Timer.start __LOC__ ;
@@ -182,7 +182,7 @@ let verify_heterogenous (ts : Instance.t list) =
                 ~app_state:A_value.to_field_elements
                 (Reduced_messages_for_next_proof_over_same_field.Step.prepare
                    ~dlog_plonk_index:
-                     (Plonk_verification_key_evals.map
+                     (Kimchi_backend_common.Plonk_verification_key_evals.map
                         ~f:(fun x -> [| x |])
                         key.commitments )
                    { t.statement.messages_for_next_step_proof with app_state } )
@@ -210,7 +210,7 @@ let verify_heterogenous (ts : Instance.t list) =
         in
         let input =
           tock_unpadded_public_input_of_statement
-            ~feature_flags:Plonk_types.Features.Full.maybe prepared_statement
+            ~feature_flags:Kimchi_backend_common.Plonk_types.Features.Full.maybe prepared_statement
         in
         let message =
           Wrap_hack.pad_accumulator

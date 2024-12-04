@@ -7,7 +7,7 @@ module Constant : sig
   (* Out-of-circuit type for wrap proofs *)
   type t =
     { messages :
-        Backend.Tock.Curve.Affine.t Pickles_types.Plonk_types.Messages.t
+        Backend.Tock.Curve.Affine.t Kimchi_backend_common.Plonk_types.Messages.t
     ; opening : dlog_opening
     }
   [@@deriving hlist]
@@ -19,10 +19,11 @@ module Checked : sig
     { messages :
         ( Step_main_inputs.Inner_curve.t
         , Step_main_inputs.Impl.Boolean.var )
-        Pickles_types.Plonk_types.Messages.In_circuit.t
+        Kimchi_backend_common.Plonk_types.Messages.In_circuit.t
     ; opening :
         ( Step_main_inputs.Inner_curve.t
-        , Impls.Step.Other_field.t Pickles_types.Shifted_value.Type2.t )
+        , Impls.Step.Other_field.t Kimchi_backend_types.Shifted_value.Type2.t
+        )
         Import.Types.Step.Bulletproof.t
     }
   [@@deriving hlist]

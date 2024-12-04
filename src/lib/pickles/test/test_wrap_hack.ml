@@ -7,7 +7,7 @@
     dune exec src/lib/pickles/test/main.exe -- test "Wrap hack"
 *)
 
-open Pickles_types
+open Kimchi_backend_types
 open Backend
 module Wrap_main_inputs = Pickles__Wrap_main_inputs
 module Wrap_hack = Pickles__Wrap_hack

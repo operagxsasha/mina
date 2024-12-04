@@ -3,7 +3,7 @@ module type S = sig
   module Endo = Endo
   open Core_kernel
   open Async_kernel
-  open Pickles_types
+  open Kimchi_backend_types
   open Hlist
   module Tick_field_sponge = Tick_field_sponge
   module Util = Util
@@ -241,7 +241,7 @@ module type S = sig
         ; main :
                'a_var main_input
             -> ('prev_vars, 'widths, 'ret_var, 'auxiliary_var) main_return M.t
-        ; feature_flags : bool Pickles_types.Plonk_types.Features.t
+        ; feature_flags : bool Kimchi_backend_common.Plonk_types.Features.t
         }
     end
 
@@ -362,7 +362,7 @@ module type S = sig
     val create :
          name:string
       -> max_proofs_verified:(module Nat.Add.Intf with type n = 'n1)
-      -> feature_flags:Opt.Flag.t Plonk_types.Features.t
+      -> feature_flags:Opt.Flag.t Kimchi_backend_common.Plonk_types.Features.t
       -> typ:('var, 'value) Impls.Step.Typ.t
       -> ('var, 'value, 'n1, Verification_key.Max_branches.n) Tag.t
 

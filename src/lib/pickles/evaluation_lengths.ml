@@ -1,7 +1,7 @@
 let default =
   let one = 1 in
-  let open Pickles_types in
-  let open Plonk_types in
+  let open Kimchi_backend_types in
+  let open Kimchi_backend_common.Plonk_types in
   Evals.
     { w = Vector.init Columns.n ~f:(fun _ -> one)
     ; coefficients = Vector.init Columns.n ~f:(fun _ -> one)

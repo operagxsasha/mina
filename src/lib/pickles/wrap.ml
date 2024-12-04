@@ -1,6 +1,6 @@
 module SC = Scalar_challenge
 module P = Proof
-open Pickles_types
+open Kimchi_backend_types
 open Hlist
 open Common
 open Import
@@ -33,7 +33,7 @@ let tick_rounds = Nat.to_int Tick.Rounds.n
 let combined_inner_product (type actual_proofs_verified) ~env ~domain ~ft_eval1
     ~actual_proofs_verified:
       (module AB : Nat.Add.Intf with type n = actual_proofs_verified)
-    (e : (_ array * _ array, _) Plonk_types.All_evals.With_public_input.t)
+    (e : (_ array * _ array, _) Kimchi_backend_common.Plonk_types.All_evals.With_public_input.t)
     ~(old_bulletproof_challenges : (_, actual_proofs_verified) Vector.t) ~r
     ~plonk ~xi ~zeta ~zetaw =
   let combined_evals =
@@ -45,7 +45,7 @@ let combined_inner_product (type actual_proofs_verified) ~env ~domain ~ft_eval1
     Type1.ft_eval0
       (module Tick.Field)
       plonk ~env ~domain
-      (Plonk_types.Evals.to_in_circuit combined_evals)
+      (Kimchi_backend_common.Plonk_types.Evals.to_in_circuit combined_evals)
       (fst e.public_input)
   in
   let T = AB.eq in
@@ -54,7 +54,7 @@ let combined_inner_product (type actual_proofs_verified) ~env ~domain ~ft_eval1
       ~f:(fun chals -> unstage (challenge_polynomial (Vector.to_array chals)))
       old_bulletproof_challenges
   in
-  let a = Plonk_types.Evals.to_list e.evals in
+  let a = Kimchi_backend_common.Plonk_types.Evals.to_list e.evals in
   let combine ~which_eval ~ft pt =
     let f (x, y) = match which_eval with `Fst -> x | `Snd -> y in
     let a = List.map ~f a in
@@ -74,7 +74,7 @@ let combined_inner_product (type actual_proofs_verified) ~env ~domain ~ft_eval1
 
 module For_tests_only = struct
   type shifted_tick_field =
-    Backend.Tick.Field.t Pickles_types.Shifted_value.Type1.t
+    Backend.Tick.Field.t Kimchi_backend_types.Shifted_value.Type1.t
 
   type scalar_challenge_constant =
     Import.Challenge.Constant.t Import.Scalar_challenge.t
@@ -171,7 +171,7 @@ module For_tests_only = struct
         (module Tick.Field)
         proof.proof.openings.evals ~rounds:(Nat.to_int Tick.Rounds.n)
         ~zeta:As_field.zeta ~zetaw
-      |> Plonk_types.Evals.to_in_circuit
+      |> Kimchi_backend_common.Plonk_types.Evals.to_in_circuit
     in
     let tick_domain =
       Plonk_checks.domain
@@ -307,7 +307,7 @@ let wrap
       , (_, actual_proofs_verified) Vector.t
       , max_local_max_proofs_verifieds
         H1.T(P.Base.Messages_for_next_proof_over_same_field.Wrap).t
-      , ( (Tock.Field.t, Tock.Field.t array) Plonk_types.All_evals.t
+      , ( (Tock.Field.t, Tock.Field.t array) Kimchi_backend_common.Plonk_types.All_evals.t
         , max_proofs_verified )
         Vector.t )
       P.Base.Step.t ) =
@@ -585,7 +585,7 @@ let wrap
         Types.Wrap.Statement.to_minimal next_statement
           ~to_option:Opt.to_option_unsafe
     ; prev_evals =
-        { Plonk_types.All_evals.evals =
+        { Kimchi_backend_common.Plonk_types.All_evals.evals =
             { public_input = x_hat_evals; evals = proof.proof.openings.evals }
         ; ft_eval1 = proof.proof.openings.ft_eval1
         }

@@ -21,23 +21,26 @@ module Make
   val chunks_needed : num_bits:int -> int
 
   val scale_fast_msb_bits :
-    pair -> Impl.Boolean.var array Pickles_types.Shifted_value.Type1.t -> G.t
+       pair
+    -> Impl.Boolean.var array Kimchi_backend_types.Shifted_value.Type1.t
+    -> G.t
 
   val scale_fast_unpack :
        pair
-    -> Impl.Field.t Pickles_types.Shifted_value.Type1.t
+    -> Impl.Field.t Kimchi_backend_types.Shifted_value.Type1.t
     -> num_bits:int
     -> G.t * Impl.Boolean.var array
 
   val scale_fast2 :
        G.t
-    -> (Impl.Field.t * Impl.Boolean.var) Pickles_types.Shifted_value.Type2.t
+    -> (Impl.Field.t * Impl.Boolean.var)
+       Kimchi_backend_types.Shifted_value.Type2.t
     -> num_bits:int
     -> G.t
 
   val scale_fast :
        pair
-    -> Impl.Field.t Pickles_types.Shifted_value.Type1.t
+    -> Impl.Field.t Kimchi_backend_types.Shifted_value.Type1.t
     -> num_bits:int
     -> G.t
 

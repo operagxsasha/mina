@@ -1,5 +1,5 @@
 open Core_kernel
-open Pickles_types
+open Kimchi_backend_types
 open Poly_types
 
 (* Compute the domains corresponding to wrap_main *)

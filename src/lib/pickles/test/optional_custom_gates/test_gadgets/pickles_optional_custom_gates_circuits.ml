@@ -1,5 +1,4 @@
 open Core_kernel
-open Pickles_types
 open Pickles.Impls.Step
 
 let add_constraint c = assert_ { basic = c; annotation = None }
@@ -179,7 +178,7 @@ let main_foreign_field_mul () =
   add_plonk_constraint
     (Raw { kind = Zero; values = [| fresh_int 0 |]; coeffs = [||] })
 
-let main_body ~(feature_flags : _ Plonk_types.Features.t) () =
+let main_body ~(feature_flags : _ Kimchi_backend_common.Plonk_types.Features.t) () =
   if feature_flags.rot then main_rot () ;
   if feature_flags.xor then main_xor () ;
   if feature_flags.range_check0 then main_range_check0 () ;

@@ -31,7 +31,7 @@ let test_fix_domains_with_runtime_table_cfgs () =
   (* Log2 value *)
   let exp_output = [ 3; 3; 7 ] in
   let feature_flags =
-    Pickles_types.Plonk_types.Features.{ none_bool with runtime_tables = true }
+    Kimchi_backend_common.Plonk_types.Features.{ none_bool with runtime_tables = true }
   in
   assert (
     List.for_all2
@@ -57,7 +57,7 @@ let test_fix_domains_with_runtime_table_cfgs_and_fixed_lookup_tables () =
   let rt_cfgs_table_sizes = [ [ 1 ]; [ 1; 1 ]; [ 1; 10; 42; 36 ]; [ 1 ]; [] ] in
   let exp_outputs = [ 3; 3; 8; 3; 3 ] in
   let feature_flags =
-    Pickles_types.Plonk_types.Features.
+    Kimchi_backend_common.Plonk_types.Features.
       { none_bool with lookup = true; runtime_tables = true }
   in
   assert (
@@ -102,7 +102,7 @@ let test_fix_domains_with_runtime_table_cfgs_and_fixed_lookup_tables_sharing_id
   (* log2 value *)
   let exp_outputs = [ 4; 4; 5 ] in
   let feature_flags =
-    Pickles_types.Plonk_types.Features.
+    Kimchi_backend_common.Plonk_types.Features.
       { none_bool with lookup = true; runtime_tables = true }
   in
   assert (
@@ -134,7 +134,7 @@ let test_fix_domains_with_fixed_lookup_tables () =
   (* Log2 value *)
   let exp_output = [ 3; 3; 7 ] in
   let feature_flags =
-    Pickles_types.Plonk_types.Features.{ none_bool with lookup = true }
+    Kimchi_backend_common.Plonk_types.Features.{ none_bool with lookup = true }
   in
   assert (
     List.for_all2
@@ -166,8 +166,8 @@ let test_fix_domains_with_xor_table () =
   (* Log2 value. XOR table size is 256 *)
   let exp_output = 9 in
   let feature_flags_s =
-    [ Pickles_types.Plonk_types.Features.{ none_bool with xor = true }
-    ; Pickles_types.Plonk_types.Features.
+    [ Kimchi_backend_common.Plonk_types.Features.{ none_bool with xor = true }
+    ; Kimchi_backend_common.Plonk_types.Features.
         { none_bool with foreign_field_add = true; xor = true }
     ]
   in
@@ -187,29 +187,29 @@ let test_fix_domains_with_range_check_table () =
   let exp_output = 13 in
   (* TODO: use QCheck to generate the different options *)
   let feature_flags_s =
-    [ Pickles_types.Plonk_types.Features.{ none_bool with range_check0 = true }
-    ; Pickles_types.Plonk_types.Features.{ none_bool with range_check1 = true }
-    ; Pickles_types.Plonk_types.Features.
+    [ Kimchi_backend_common.Plonk_types.Features.{ none_bool with range_check0 = true }
+    ; Kimchi_backend_common.Plonk_types.Features.{ none_bool with range_check1 = true }
+    ; Kimchi_backend_common.Plonk_types.Features.
         { none_bool with range_check0 = true; foreign_field_add = true }
-    ; Pickles_types.Plonk_types.Features.
+    ; Kimchi_backend_common.Plonk_types.Features.
         { none_bool with range_check0 = true; range_check1 = true }
-    ; Pickles_types.Plonk_types.Features.
+    ; Kimchi_backend_common.Plonk_types.Features.
         { none_bool with
           range_check0 = true
         ; range_check1 = true
         ; foreign_field_add = true
         }
-    ; Pickles_types.Plonk_types.Features.
+    ; Kimchi_backend_common.Plonk_types.Features.
         { none_bool with foreign_field_mul = true }
-    ; Pickles_types.Plonk_types.Features.
+    ; Kimchi_backend_common.Plonk_types.Features.
         { none_bool with foreign_field_mul = true; foreign_field_add = true }
-    ; Pickles_types.Plonk_types.Features.
+    ; Kimchi_backend_common.Plonk_types.Features.
         { none_bool with
           foreign_field_mul = true
         ; range_check0 = true
         ; range_check1 = true
         }
-    ; Pickles_types.Plonk_types.Features.
+    ; Kimchi_backend_common.Plonk_types.Features.
         { none_bool with
           foreign_field_mul = true
         ; foreign_field_add = true
@@ -232,29 +232,29 @@ let test_fix_domains_with_range_check_and_xor_table () =
   in
   let exp_output = 13 in
   let feature_flags_s =
-    [ Pickles_types.Plonk_types.Features.
+    [ Kimchi_backend_common.Plonk_types.Features.
         { none_bool with range_check0 = true; xor = true }
-    ; Pickles_types.Plonk_types.Features.
+    ; Kimchi_backend_common.Plonk_types.Features.
         { none_bool with range_check1 = true; xor = true }
-    ; Pickles_types.Plonk_types.Features.
+    ; Kimchi_backend_common.Plonk_types.Features.
         { none_bool with range_check0 = true; range_check1 = true; xor = true }
-    ; Pickles_types.Plonk_types.Features.
+    ; Kimchi_backend_common.Plonk_types.Features.
         { none_bool with foreign_field_mul = true; xor = true }
-    ; Pickles_types.Plonk_types.Features.
+    ; Kimchi_backend_common.Plonk_types.Features.
         { none_bool with
           foreign_field_mul = true
         ; range_check0 = true
         ; range_check1 = true
         ; xor = true
         }
-    ; Pickles_types.Plonk_types.Features.
+    ; Kimchi_backend_common.Plonk_types.Features.
         { none_bool with
           foreign_field_mul = true
         ; range_check0 = true
         ; range_check1 = true
         ; rot = true
         }
-    ; Pickles_types.Plonk_types.Features.
+    ; Kimchi_backend_common.Plonk_types.Features.
         { none_bool with
           foreign_field_mul = true
         ; range_check0 = true

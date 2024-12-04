@@ -6,16 +6,16 @@
    Invocation: \
     dune exec src/lib/pickles/test/main.exe -- test "Gate:"
 *)
-open Pickles_types
+open Kimchi_backend_types
 module Wrap = Pickles__Wrap
 module Import = Pickles__Import
 
 (* Type to list test configurations, that is, how to interpret feature flags in
    the tests. *)
 type test_options =
-  { true_is_yes : Plonk_types.Features.options
-  ; true_is_maybe : Plonk_types.Features.options
-  ; all_maybes : Plonk_types.Features.options
+  { true_is_yes : Kimchi_backend_common.Plonk_types.Features.options
+  ; true_is_maybe : Kimchi_backend_common.Plonk_types.Features.options
+  ; all_maybes : Kimchi_backend_common.Plonk_types.Features.options
   }
 
 (* Helper function to convert actual feature flags into 3 test configurations of feature flags
@@ -26,17 +26,17 @@ type test_options =
      - one where true is mapped to Maybe and false is mapped to No
      - one where true and false are both mapped to Maybe *)
 let generate_test_feature_flag_configs
-    (actual_feature_flags : Plonk_types.Features.flags) : test_options =
+    (actual_feature_flags : Kimchi_backend_common.Plonk_types.Features.flags) : test_options =
   (* Set up a helper to convert actual feature flags composed of booleans into
      feature flags composed of Yes/No/Maybe options.
      @param actual_feature_flags The actual feature flags in terms of true/false
      @param true_opt  Opt type to use for true/enabled features
      @param false_opt Opt type to use for false/disabled features
      @return Corresponding feature flags composed of Yes/No/Maybe values *)
-  let compute_feature_flags (actual_feature_flags : Plonk_types.Features.flags)
+  let compute_feature_flags (actual_feature_flags : Kimchi_backend_common.Plonk_types.Features.flags)
       (true_opt : Opt.Flag.t) (false_opt : Opt.Flag.t) :
-      Plonk_types.Features.options =
-    Plonk_types.Features.map actual_feature_flags ~f:(function
+      Kimchi_backend_common.Plonk_types.Features.options =
+    Kimchi_backend_common.Plonk_types.Features.map actual_feature_flags ~f:(function
       | true ->
           true_opt
       | false ->
@@ -61,8 +61,8 @@ let generate_test_feature_flag_configs
 
    @return true or throws and exception
 *)
-let run_recursive_proof_test (actual_feature_flags : Plonk_types.Features.flags)
-    (feature_flags : Plonk_types.Features.options)
+let run_recursive_proof_test (actual_feature_flags : Kimchi_backend_common.Plonk_types.Features.flags)
+    (feature_flags : Kimchi_backend_common.Plonk_types.Features.options)
     (public_input : Pasta_bindings.Fp.t list)
     (vk : Kimchi_bindings.Protocol.VerifierIndex.Fp.t)
     (proof : Backend.Tick.Proof.with_public_evals) : Impls.Step.Boolean.value =
@@ -113,7 +113,7 @@ let run_recursive_proof_test (actual_feature_flags : Plonk_types.Features.flags)
   in
 
   let full_features =
-    Plonk_types.Features.to_full ~or_:Opt.Flag.( ||| ) feature_flags
+    Kimchi_backend_common.Plonk_types.Features.to_full ~or_:Opt.Flag.( ||| ) feature_flags
   in
 
   (* Define Typ.t for Deferred_values.t -- A Type.t defines how to convert a value of some type
@@ -151,7 +151,7 @@ let run_recursive_proof_test (actual_feature_flags : Plonk_types.Features.flags)
      for use in the circuit *)
   and evals =
     constant
-      (Plonk_types.All_evals.typ ~num_chunks:1 full_features)
+      (Kimchi_backend_common.Plonk_types.All_evals.typ ~num_chunks:1 full_features)
       { evals =
           { public_input = x_hat_evals; evals = proof.proof.openings.evals }
       ; ft_eval1 = proof.proof.openings.ft_eval1
@@ -206,7 +206,7 @@ module type SETUP = sig
   val example : example
 
   (* Feature flags tused for backend proof *)
-  val actual_feature_flags : bool Plonk_types.Features.t
+  val actual_feature_flags : bool Kimchi_backend_common.Plonk_types.Features.t
 end
 
 (* [Make] is the test functor.
@@ -272,7 +272,7 @@ module Lookup = Make (struct
     with_one_public_input Kimchi_bindings.Protocol.Proof.Fp.example_with_lookup
 
   let actual_feature_flags =
-    { Plonk_types.Features.none_bool with lookup = true; runtime_tables = true }
+    { Kimchi_backend_common.Plonk_types.Features.none_bool with lookup = true; runtime_tables = true }
 end)
 
 module Range_check = Make (struct
@@ -281,7 +281,7 @@ module Range_check = Make (struct
       Kimchi_bindings.Protocol.Proof.Fp.example_with_range_check
 
   let actual_feature_flags =
-    { Plonk_types.Features.none_bool with
+    { Kimchi_backend_common.Plonk_types.Features.none_bool with
       range_check0 = true
     ; range_check1 = true
     }
@@ -293,14 +293,14 @@ module Range_check_64 = Make (struct
       Kimchi_bindings.Protocol.Proof.Fp.example_with_range_check0
 
   let actual_feature_flags =
-    { Plonk_types.Features.none_bool with range_check0 = true }
+    { Kimchi_backend_common.Plonk_types.Features.none_bool with range_check0 = true }
 end)
 
 module Xor = Make (struct
   let example =
     with_two_public_inputs Kimchi_bindings.Protocol.Proof.Fp.example_with_xor
 
-  let actual_feature_flags = { Plonk_types.Features.none_bool with xor = true }
+  let actual_feature_flags = { Kimchi_backend_common.Plonk_types.Features.none_bool with xor = true }
 end)
 
 module Rot = Make (struct
@@ -308,7 +308,7 @@ module Rot = Make (struct
     with_two_public_inputs Kimchi_bindings.Protocol.Proof.Fp.example_with_rot
 
   let actual_feature_flags =
-    { Plonk_types.Features.none_bool with range_check0 = true; rot = true }
+    { Kimchi_backend_common.Plonk_types.Features.none_bool with range_check0 = true; rot = true }
 end)
 
 module FFAdd = Make (struct
@@ -316,7 +316,7 @@ module FFAdd = Make (struct
     with_one_public_input Kimchi_bindings.Protocol.Proof.Fp.example_with_ffadd
 
   let actual_feature_flags =
-    { Plonk_types.Features.none_bool with
+    { Kimchi_backend_common.Plonk_types.Features.none_bool with
       range_check0 = true
     ; range_check1 = true
     ; foreign_field_add = true

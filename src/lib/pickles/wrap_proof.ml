@@ -1,4 +1,4 @@
-open Pickles_types
+open Kimchi_backend_types
 open Import
 open Backend
 
@@ -7,7 +7,7 @@ type dlog_opening = (Tock.Curve.Affine.t, Tock.Field.t) Types.Step.Bulletproof.t
 module Constant = struct
   (* Out-of-circuit type for wrap proofs *)
   type t =
-    { messages : Tock.Curve.Affine.t Plonk_types.Messages.t
+    { messages : Tock.Curve.Affine.t Kimchi_backend_common.Plonk_types.Messages.t
     ; opening : dlog_opening
     }
   [@@deriving hlist]
@@ -19,7 +19,7 @@ module Checked = struct
   (* In-circuit type for wrap proofs *)
   type t =
     { messages :
-        (Inner_curve.t, Impl.Boolean.var) Plonk_types.Messages.In_circuit.t
+        (Inner_curve.t, Impl.Boolean.var) Kimchi_backend_common.Plonk_types.Messages.In_circuit.t
     ; opening :
         ( Inner_curve.t
         , Impls.Step.Other_field.t Shifted_value.Type2.t )
@@ -34,7 +34,7 @@ let typ : (Checked.t, Constant.t) Typ.t =
   let shift = Shifted_value.Type2.Shift.create (module Tock.Field) in
   Typ.of_hlistable ~var_to_hlist:Checked.to_hlist ~var_of_hlist:Checked.of_hlist
     ~value_to_hlist:Constant.to_hlist ~value_of_hlist:Constant.of_hlist
-    [ Plonk_types.Messages.typ Inner_curve.typ Plonk_types.Features.Full.none
+    [ Kimchi_backend_common.Plonk_types.Messages.typ Inner_curve.typ Kimchi_backend_common.Plonk_types.Features.Full.none
         ~dummy:Inner_curve.Params.one
         ~commitment_lengths:
           (Commitment_lengths.default

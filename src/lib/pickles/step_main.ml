@@ -1,4 +1,4 @@
-open Pickles_types
+open Kimchi_backend_types
 open Hlist
 open Import
 open Impls.Step
@@ -89,7 +89,7 @@ let verify_one ~srs
   let verified =
     with_label __LOC__ (fun () ->
         Step_verifier.verify ~srs
-          ~feature_flags:(Plonk_types.Features.of_full d.feature_flags)
+          ~feature_flags:(Kimchi_backend_common.Plonk_types.Features.of_full d.feature_flags)
           ~lookup_parameters:
             { use = d.feature_flags.uses_lookups
             ; zero =
@@ -208,7 +208,7 @@ let step_main :
         type pvars pvals ns1 ns2 br.
            (pvars, pvals, ns1, ns2) H4.T(Tag).t
         -> (pvars, br) Length.t
-        -> (Opt.Flag.t Plonk_types.Features.Full.t * int, br) Vector.t =
+        -> (Opt.Flag.t Kimchi_backend_common.Plonk_types.Features.Full.t * int, br) Vector.t =
      fun ds ld ->
       match[@warning "-4"] (ds, ld) with
       | [], Z ->
@@ -231,7 +231,7 @@ let step_main :
         -> (pvars, br) Length.t
         -> (ns1, br) Length.t
         -> (ns2, br) Length.t
-        -> (Opt.Flag.t Plonk_types.Features.Full.t * int, br) Vector.t
+        -> (Opt.Flag.t Kimchi_backend_common.Plonk_types.Features.Full.t * int, br) Vector.t
         -> (pvars, pvals, ns1, ns2) H4.T(Typ_with_max_proofs_verified).t =
      fun ds ns1 ns2 ld ln1 ln2 feature_flags_and_num_chunkss ->
       match[@warning "-4"]
@@ -353,7 +353,7 @@ let step_main :
           let num_chunks = (* TODO *) Plonk_checks.num_chunks_by_default in
           exists
             ~request:(fun () -> Req.Wrap_index)
-            (Plonk_verification_key_evals.typ
+            (Kimchi_backend_common.Plonk_verification_key_evals.typ
                (Typ.array ~length:num_chunks Step_verifier.Inner_curve.typ) )
         and prevs =
           exists (Prev_typ.f prev_proof_typs) ~request:(fun () ->

@@ -1,7 +1,9 @@
 open Core_kernel
-open Pickles_types
+open Kimchi_backend_types
 
-module T (Impl : Snarky_backendless.Snark_intf.Run) (N : Pickles_types.Nat.Intf) =
+module T
+    (Impl : Snarky_backendless.Snark_intf.Run)
+    (N : Kimchi_backend_types.Nat.Intf) =
 struct
   open Impl
 

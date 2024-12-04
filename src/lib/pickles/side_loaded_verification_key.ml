@@ -24,7 +24,7 @@
 *)
 
 open Core_kernel
-open Pickles_types
+open Kimchi_backend_types
 open Import
 module V = Pickles_base.Side_loaded_verification_key
 
@@ -186,7 +186,7 @@ module Stable = struct
         let log2_size = Import.Domain.log2_size d in
         let public =
           let (T (input, _conv, _conv_inv)) =
-            Impls.Wrap.input ~feature_flags:Plonk_types.Features.Full.maybe ()
+            Impls.Wrap.input ~feature_flags:Kimchi_backend_common.Plonk_types.Features.Full.maybe ()
           in
           let (Typ typ) = input in
           typ.size_in_field_elements
@@ -289,8 +289,8 @@ let dummy : t =
   ; actual_wrap_domain_size = N2
   ; wrap_index =
       (let g = Backend.Tock.Curve.(to_affine_exn one) in
-       { sigma_comm = Vector.init Plonk_types.Permuts.n ~f:(fun _ -> g)
-       ; coefficients_comm = Vector.init Plonk_types.Columns.n ~f:(fun _ -> g)
+       { sigma_comm = Vector.init Kimchi_backend_common.Plonk_types.Permuts.n ~f:(fun _ -> g)
+       ; coefficients_comm = Vector.init Kimchi_backend_common.Plonk_types.Columns.n ~f:(fun _ -> g)
        ; generic_comm = g
        ; psm_comm = g
        ; complete_add_comm = g
@@ -312,7 +312,7 @@ module Checked = struct
     ; actual_wrap_domain_size :
         Impl.field Pickles_base.Proofs_verified.One_hot.Checked.t
           (** The actual domain size used by the wrap circuit. *)
-    ; wrap_index : Inner_curve.t Plonk_verification_key_evals.t
+    ; wrap_index : Inner_curve.t Kimchi_backend_common.Plonk_verification_key_evals.t
           (** The plonk verification key for the 'wrapping' proof that this key
               is used to verify.
           *)
@@ -349,7 +349,7 @@ let typ : (Checked.t, t) Impls.Step.Typ.t =
   Typ.of_hlistable
     [ Pickles_base.Proofs_verified.One_hot.typ
     ; Pickles_base.Proofs_verified.One_hot.typ
-    ; Plonk_verification_key_evals.typ Inner_curve.typ
+    ; Kimchi_backend_common.Plonk_verification_key_evals.typ Inner_curve.typ
     ]
     ~var_to_hlist:Checked.to_hlist ~var_of_hlist:Checked.of_hlist
     ~value_of_hlist:(fun _ ->

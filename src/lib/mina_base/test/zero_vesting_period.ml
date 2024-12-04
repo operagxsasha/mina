@@ -151,7 +151,7 @@ let mk_zkapp_with_vesting_period n =
                 "set_token_symbol": [ "Ignore" ],
                 "increment_nonce": [ "Ignore" ],
                 "set_voting_for": [ "Ignore" ],
-                "set_timing": [ "Ignore" ],
+                "set_timing": [ "Ignore" ]
               },
               "valid_while": [ "Ignore" ]
             },
@@ -274,7 +274,7 @@ let mk_zkapp_with_vesting_period n =
                 "set_token_symbol": [ "Ignore" ],
                 "increment_nonce": [ "Ignore" ],
                 "set_voting_for": [ "Ignore" ],
-                "set_timing": [ "Ignore" ],
+                "set_timing": [ "Ignore" ]
               },
               "valid_while": [ "Ignore" ]
             },

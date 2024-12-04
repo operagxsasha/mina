@@ -17,6 +17,7 @@
    ppxlib
    core_kernel
    ;; local libraries
+   kimchi_backend_types
    mina_wire_types
    snarky.backendless
    random_oracle_input

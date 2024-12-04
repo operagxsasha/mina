@@ -40,8 +40,8 @@ let to_int : t -> int = function N0 -> 0 | N1 -> 1 | N2 -> 2
 
 type proofs_verified = t
 
-let of_nat_exn (type n) (n : n Pickles_types.Nat.t) : t =
-  let open Pickles_types.Nat in
+let of_nat_exn (type n) (n : n Kimchi_backend_types.Nat.t) : t =
+  let open Kimchi_backend_types.Nat in
   match n with
   | Z ->
       N0
@@ -68,7 +68,7 @@ let of_int_exn (n : int) : t =
 
 type 'f boolean = 'f Snarky_backendless.Cvar.t Snarky_backendless.Boolean.t
 
-type 'a vec2 = ('a, Pickles_types.Nat.N2.n) Pickles_types.Vector.t
+type 'a vec2 = ('a, Kimchi_backend_types.Nat.N2.n) Kimchi_backend_types.Vector.t
 
 module Prefix_mask = struct
   module Checked = struct
@@ -98,24 +98,24 @@ module Prefix_mask = struct
   let typ : (_ Checked.t, proofs_verified) Step_impl.Typ.t =
     let open Step_impl in
     Typ.transport
-      (Pickles_types.Vector.typ Boolean.typ Pickles_types.Nat.N2.n)
+      (Kimchi_backend_types.Vector.typ Boolean.typ Kimchi_backend_types.Nat.N2.n)
       ~there ~back
 
   let wrap_typ : (_ Checked.t, proofs_verified) Wrap_impl.Typ.t =
     let open Wrap_impl in
     Wrap_impl.Typ.transport
-      (Pickles_types.Vector.wrap_typ Boolean.typ Pickles_types.Nat.N2.n)
+      (Kimchi_backend_types.Vector.wrap_typ Boolean.typ Kimchi_backend_types.Nat.N2.n)
       ~there ~back
 end
 
 module One_hot = struct
   module Checked = struct
-    type 'f t = ('f, Pickles_types.Nat.N3.n) One_hot_vector.t
+    type 'f t = ('f, Kimchi_backend_types.Nat.N3.n) One_hot_vector.t
 
     let to_input (type f) (t : f t) =
       Random_oracle_input.Chunked.packeds
         (Array.map
-           Pickles_types.(Vector.to_array (t :> (f boolean, Nat.N3.n) Vector.t))
+           Kimchi_backend_types.(Vector.to_array (t :> (f boolean, Nat.N3.n) Vector.t))
            ~f:(fun b -> ((b :> f Snarky_backendless.Cvar.t), 1)) )
   end
 
@@ -147,9 +147,9 @@ module One_hot = struct
 
   let typ : (_ Checked.t, proofs_verified) Step_impl.Typ.t =
     let module M = One_hot_vector.Make (Step_impl) in
-    Step_impl.Typ.transport (M.typ Pickles_types.Nat.N3.n) ~there ~back
+    Step_impl.Typ.transport (M.typ Kimchi_backend_types.Nat.N3.n) ~there ~back
 
   let wrap_typ : (_ Checked.t, proofs_verified) Wrap_impl.Typ.t =
     let module M = One_hot_vector.Make (Wrap_impl) in
-    Wrap_impl.Typ.transport (M.typ Pickles_types.Nat.N3.n) ~there ~back
+    Wrap_impl.Typ.transport (M.typ Kimchi_backend_types.Nat.N3.n) ~there ~back
 end

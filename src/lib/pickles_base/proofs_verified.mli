@@ -4,9 +4,9 @@ module Stable : sig
     type t = Mina_wire_types.Pickles_base.Proofs_verified.V1.t = N0 | N1 | N2
     [@@deriving sexp, compare, yojson, hash, equal]
 
-    include Pickles_types.Sigs.Binable.S with type t := t
+    include Kimchi_backend_types.Sigs.Binable.S with type t := t
 
-    include Pickles_types.Sigs.VERSIONED
+    include Kimchi_backend_types.Sigs.VERSIONED
   end
 end
 
@@ -15,7 +15,7 @@ type t = Stable.V1.t = N0 | N1 | N2
 
 (** [of_nat_exn t_n] converts the type level natural [t_n] to the data type natural.
     Raise an exception if [t_n] represents a value above or equal to 3 *)
-val of_nat_exn : 'n Pickles_types.Nat.t -> t
+val of_nat_exn : 'n Kimchi_backend_types.Nat.t -> t
 
 (** [of_int_exn n] converts the runtime natural [n] to the data type natural. Raise
     an exception if the value [n] is above or equal to 3 *)
@@ -27,7 +27,7 @@ val to_int : t -> int
 
 module One_hot : sig
   module Checked : sig
-    type 'f t = ('f, Pickles_types.Nat.N3.n) One_hot_vector.t
+    type 'f t = ('f, Kimchi_backend_types.Nat.N3.n) One_hot_vector.t
 
     val to_input :
       'f t -> 'f Snarky_backendless.Cvar.t Random_oracle_input.Chunked.t
@@ -45,7 +45,7 @@ end
 type 'f boolean = 'f Snarky_backendless.Cvar.t Snarky_backendless.Boolean.t
 
 (** Vector of 2 elements *)
-type 'a vec2 = ('a, Pickles_types.Nat.N2.n) Pickles_types.Vector.t
+type 'a vec2 = ('a, Kimchi_backend_types.Nat.N2.n) Kimchi_backend_types.Vector.t
 
 module Prefix_mask : sig
   module Checked : sig

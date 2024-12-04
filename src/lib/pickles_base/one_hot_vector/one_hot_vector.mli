@@ -7,7 +7,7 @@
     https://en.wikipedia.org/wiki/One-hot } wikipedia article }.
 *)
 
-open Pickles_types
+open Kimchi_backend_types
 
 module Constant : sig
   type t = int

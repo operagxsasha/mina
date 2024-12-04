@@ -1,5 +1,3 @@
-open Inline_test_quiet_logs
-
 let%test_module "Epoch ledger sync tests" =
   ( module struct
     open Core_kernel
@@ -30,7 +28,21 @@ let%test_module "Epoch ledger sync tests" =
 
     exception Sync_timeout
 
-    let logger = Logger.create ()
+    let logger = Logger.null ()
+
+    let () =
+      (* Disable log messages from best_tip_diff logger. *)
+      Logger.Consumer_registry.register ~commit_id:Mina_version.commit_id
+        ~id:Logger.Logger_id.best_tip_diff ~processor:(Logger.Processor.raw ())
+        ~transport:
+          (Logger.Transport.create
+             ( module struct
+               type t = unit
+
+               let transport () _ = ()
+             end )
+             () )
+        ()
 
     let default_timeout_min = 5.0
 
@@ -140,10 +152,10 @@ let%test_module "Epoch ledger sync tests" =
 
     let make_verifier (module Context : CONTEXT) =
       let open Context in
-      Verifier.create ~logger ~proof_level:precomputed_values.proof_level
-        ~constraint_constants:precomputed_values.constraint_constants ~pids
+      Verifier.For_tests.default ~constraint_constants ~logger
+        ~proof_level:precomputed_values.proof_level ~pids
         ~conf_dir:(Some (make_dirname "verifier"))
-        ~commit_id:"not specified for unit tests" ()
+        ()
 
     let make_empty_ledger (module Context : CONTEXT) =
       Mina_ledger.Ledger.create
@@ -198,7 +210,10 @@ let%test_module "Epoch ledger sync tests" =
           ~consensus_constants ~time_controller ~logger
           ~frontier_broadcast_pipe:frontier_broadcast_pipe_r ~on_remote_push
           ~log_gossip_heard:false
-          ~block_window_duration:compile_config.block_window_duration
+          ~block_window_duration:
+            ( Float.of_int
+                precomputed_values.constraint_constants.block_window_duration_ms
+            |> Time.Span.of_ms )
       in
       let snark_remote_sink =
         let config =
@@ -211,7 +226,11 @@ let%test_module "Epoch ledger sync tests" =
             ~consensus_constants ~time_controller ~logger
             ~frontier_broadcast_pipe:frontier_broadcast_pipe_r ~on_remote_push
             ~log_gossip_heard:false
-            ~block_window_duration:compile_config.block_window_duration
+            ~block_window_duration:
+              ( Float.of_int
+                  precomputed_values.constraint_constants
+                    .block_window_duration_ms
+              |> Time.Span.of_ms )
         in
         snark_remote_sink
       in
@@ -422,7 +441,8 @@ let%test_module "Epoch ledger sync tests" =
             | Error _ ->
                 failwith "Could not add starting account" ) ;
         let sync_ledger =
-          Mina_ledger.Sync_ledger.Db.create ~logger
+          Mina_ledger.Sync_ledger.Db.create
+            ~context:(module Context)
             ~trust_system:Context.trust_system db_ledger
         in
         let query_reader =

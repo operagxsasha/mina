@@ -1269,6 +1269,8 @@ let context ~commit_id (config : Config.t) : (module CONTEXT) =
 
     let compaction_interval = config.compile_config.compaction_interval
 
+    (*Same as config.precomputed_values.compile_config.
+      TODO: Remove redundant fields *)
     let compile_config = config.compile_config
   end )
 
@@ -1500,7 +1502,11 @@ let create ~commit_id ?wallets (config : Config.t) =
   let constraint_constants = config.precomputed_values.constraint_constants in
   let consensus_constants = config.precomputed_values.consensus_constants in
   let compile_config = config.precomputed_values.compile_config in
-  let block_window_duration = config.compile_config.block_window_duration in
+  let block_window_duration =
+    Float.of_int
+      config.precomputed_values.constraint_constants.block_window_duration_ms
+    |> Time.Span.of_ms
+  in
   let monitor = Option.value ~default:(Monitor.create ()) config.monitor in
   Async.Scheduler.within' ~monitor (fun () ->
       let set_itn_data (type t) (module M : Itn_settable with type t = t) (t : t)
@@ -1564,15 +1570,23 @@ let create ~commit_id ?wallets (config : Config.t) =
                       ~metadata:[ ("exn", Error_json.error_to_yojson err) ] ) )
               (fun () ->
                 O1trace.thread "manage_verifier_subprocess" (fun () ->
+                    let%bind blockchain_verification_key =
+                      Prover.get_blockchain_verification_key prover
+                      >>| Or_error.ok_exn
+                    in
+                    let%bind transaction_verification_key =
+                      Prover.get_transaction_verification_key prover
+                      >>| Or_error.ok_exn
+                    in
                     let%bind verifier =
                       Verifier.create ~commit_id ~logger:config.logger
                         ~enable_internal_tracing:
                           (Internal_tracing.is_enabled ())
                         ~internal_trace_filename:"verifier-internal-trace.jsonl"
                         ~proof_level:config.precomputed_values.proof_level
-                        ~constraint_constants:
-                          config.precomputed_values.constraint_constants
-                        ~pids:config.pids ~conf_dir:(Some config.conf_dir) ()
+                        ~pids:config.pids ~conf_dir:(Some config.conf_dir)
+                        ~blockchain_verification_key
+                        ~transaction_verification_key ()
                     in
                     let%map () = set_itn_data (module Verifier) verifier in
                     verifier ) )
@@ -1609,7 +1623,9 @@ let create ~commit_id ?wallets (config : Config.t) =
                     Vrf_evaluator.create ~commit_id ~constraint_constants
                       ~pids:config.pids ~logger:config.logger
                       ~conf_dir:config.conf_dir ~consensus_constants
-                      ~keypairs:config.block_production_keypairs ) )
+                      ~keypairs:config.block_production_keypairs
+                      ~compile_config:config.precomputed_values.compile_config )
+                )
             >>| Result.ok_exn
           in
           let snark_worker =
@@ -2250,7 +2266,7 @@ let get_filtered_log_entries
   in
   (get_from_idx curr_idx messages [], is_started)
 
-let verifier { processes = { verifier; _ }; _ } = verifier
+let prover { processes = { prover; _ }; _ } = prover
 
 let vrf_evaluator { processes = { vrf_evaluator; _ }; _ } = vrf_evaluator
 

@@ -54,6 +54,7 @@ watch 'psql archive -t -c  "select MAX(global_slot_since_genesis) from blocks"'
 ./src/test/archive/sample_db/convert_chain_to_canonical.sh postgres://postgres:postgres@localhost:5432/archive
 
 # replace precomputed_blocks.zip with whole mess
+mkdir precomputed_blocks
 find ~/.mina-network -name 'precomputed_blocks.log' | xargs -I ! ./scripts/mina-local-network/split_precomputed_log.sh ! precomputed_blocks
 rm ./src/test/archive/sample_db/precomputed_blocks.zip
 zip -r ./src/test/archive/sample_db/precomputed_blocks.zip precomputed_blocks
@@ -99,10 +100,9 @@ a) We can alter input config and use `target_epoch_ledgers_state_hash` property 
 
 b) Convert pending chain to canonical blocks using helper script:
 
-`
-`./src/test/archive/sample_db/convert_chain_to_canonical.sh postgres://postgres:postgres@localhost:5432/archive`
+`./src/test/archive/sample_db/convert_chain_to_canonical.sh postgres://postgres:postgres@localhost:5432/archive '3NLbZ28M72eewCxYUCE3CwQo5c7wPzoiGcNC5Bbe8oEnrutXtZt9'`
 
-As a result archive database will now have blocks which are a part of chain from genesis block to target block converted to canonical. All blocks which are not a part of mentioned chain and have height smaller than target blocks will be orphaned. Rest will be left intact as pending. DO NOT USE on production.
+As a result archive database will now have blocks which are a part of chain from genesis block to target block, converted to canonical. All blocks which are not a part of mentioned chain and have height smaller than target blocks will be orphaned. Rest will be left intact as pending. DO NOT USE on production.
 
 ### Dependencies
 

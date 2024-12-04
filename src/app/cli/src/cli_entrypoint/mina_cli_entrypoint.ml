@@ -1006,7 +1006,7 @@ let setup_daemon logger ~itn_features =
           let module Context = struct
             let logger = logger
 
-            let precomputed_values = precomputed_values
+            let compile_config = precomputed_values.compile_config
 
             let constraint_constants = precomputed_values.constraint_constants
 
@@ -1736,10 +1736,11 @@ let internal_commands ~itn_features logger =
                     | Error err ->
                         failwithf "Could not parse JSON: %s" err () ) )
           in
+
           let%bind verifier =
-            Verifier.create ~commit_id:Mina_version.commit_id ~logger
-              ~proof_level ~constraint_constants ~pids:(Pid.Table.create ())
-              ~conf_dir:(Some conf_dir) ()
+            Verifier.For_tests.default ~constraint_constants ~proof_level
+              ~commit_id:Mina_version.commit_id ~logger
+              ~pids:(Pid.Table.create ()) ~conf_dir:(Some conf_dir) ()
           in
           let%bind result =
             let cap lst =

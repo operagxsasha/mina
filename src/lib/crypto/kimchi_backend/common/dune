@@ -30,7 +30,7 @@
   ;; local libraries
   tuple_lib
   key_cache
-  pickles_types
+  kimchi_backend_types
   hex
   kimchi_bindings
   kimchi_pasta_snarky_backend

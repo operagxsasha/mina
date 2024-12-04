@@ -1,6 +1,8 @@
 (* Module and type signatures helpful for Plonk *)
 
-val hash_fold_array : 'a Sigs.hashable -> 'a array Sigs.hashable
+val hash_fold_array :
+     'a Kimchi_backend_types.Sigs.hashable
+  -> 'a array Kimchi_backend_types.Sigs.hashable
 
 (** Features are custom gates, lookup tables or runtime tables *)
 module Features : sig
@@ -31,9 +33,9 @@ module Features : sig
 
     val map2 : 'a t -> 'b t -> f:('a -> 'b -> 'c) -> 'c t
 
-    val none : Opt.Flag.t t
+    val none : Kimchi_backend_types.Opt.Flag.t t
 
-    val maybe : Opt.Flag.t t
+    val maybe : Kimchi_backend_types.Opt.Flag.t t
 
     val none_bool : bool t
   end
@@ -66,7 +68,7 @@ module Features : sig
 
   (** {2 Type aliases} *)
 
-  type options = Opt.Flag.t t
+  type options = Kimchi_backend_types.Opt.Flag.t t
 
   type flags = bool t
 
@@ -75,12 +77,12 @@ module Features : sig
   val to_data :
        'a t
     -> ('a * ('a * ('a * ('a * ('a * ('a * ('a * ('a * unit))))))))
-       Hlist.HlistId.t
+       Kimchi_backend_types.Hlist.HlistId.t
 
   (** [of_data flags_list] constructs a record from the flags list *)
   val of_data :
        ('a * ('a * ('a * ('a * ('a * ('a * ('a * ('a * unit))))))))
-       Hlist.HlistId.t
+       Kimchi_backend_types.Hlist.HlistId.t
     -> 'a t
 
   val typ :
@@ -111,20 +113,20 @@ module Poly_comm : sig
 end
 
 (** The number of wires in the proving system *)
-module Columns_vec = Vector.Vector_15
+module Columns_vec = Kimchi_backend_types.Vector.Vector_15
 
-module Columns = Nat.N15
+module Columns = Kimchi_backend_types.Nat.N15
 
 (** The number of wires that are considered in the permutation argument *)
-module Permuts = Nat.N7
+module Permuts = Kimchi_backend_types.Nat.N7
 
-module Permuts_vec = Vector.Vector_7
-module Permuts_minus_1 = Nat.N6
-module Permuts_minus_1_vec = Vector.Vector_6
-module Lookup_sorted_minus_1 = Nat.N4
-module Lookup_sorted_minus_1_vec = Vector.Vector_4
-module Lookup_sorted = Nat.N5
-module Lookup_sorted_vec = Vector.Vector_5
+module Permuts_vec = Kimchi_backend_types.Vector.Vector_7
+module Permuts_minus_1 = Kimchi_backend_types.Nat.N6
+module Permuts_minus_1_vec = Kimchi_backend_types.Vector.Vector_6
+module Lookup_sorted_minus_1 = Kimchi_backend_types.Nat.N4
+module Lookup_sorted_minus_1_vec = Kimchi_backend_types.Vector.Vector_4
+module Lookup_sorted = Kimchi_backend_types.Nat.N5
+module Lookup_sorted_vec = Kimchi_backend_types.Vector.Vector_5
 
 (** Messages involved in the polynomial IOP *)
 module Messages : sig
@@ -155,9 +157,9 @@ module Messages : sig
     module In_circuit : sig
       type ('g, 'bool) t =
         { sorted : 'g Lookup_sorted_minus_1_vec.t
-        ; sorted_5th_column : ('g, 'bool) Opt.t
+        ; sorted_5th_column : ('g, 'bool) Kimchi_backend_types.Opt.t
         ; aggreg : 'g
-        ; runtime : ('g, 'bool) Opt.t
+        ; runtime : ('g, 'bool) Kimchi_backend_types.Opt.t
         }
     end
   end
@@ -197,25 +199,27 @@ module Messages : sig
       ; lookup :
           ( ('g Poly_comm.Without_degree_bound.t, 'bool) Lookup.In_circuit.t
           , 'bool )
-          Opt.t
+          Kimchi_backend_types.Opt.t
       }
     [@@deriving fields]
   end
 
   val typ :
        ('a, 'b) Kimchi_pasta_snarky_backend.Step_impl.Typ.t
-    -> Opt.Flag.t Features.Full.t
+    -> Kimchi_backend_types.Opt.Flag.t Features.Full.t
     -> dummy:'b
-    -> commitment_lengths:((int, 'n) Vector.vec, int, int) Poly.t
+    -> commitment_lengths:
+         ((int, 'n) Kimchi_backend_types.Vector.vec, int, int) Poly.t
     -> ( ('a, Kimchi_pasta_snarky_backend.Step_impl.Boolean.var) In_circuit.t
        , 'b t )
        Kimchi_pasta_snarky_backend.Step_impl.Typ.t
 
   val wrap_typ :
        ('a, 'b) Kimchi_pasta_snarky_backend.Wrap_impl.Typ.t
-    -> Opt.Flag.t Features.Full.t
+    -> Kimchi_backend_types.Opt.Flag.t Features.Full.t
     -> dummy:'b
-    -> commitment_lengths:((int, 'n) Vector.vec, int, int) Poly.t
+    -> commitment_lengths:
+         ((int, 'n) Kimchi_backend_types.Vector.vec, int, int) Poly.t
     -> ( ('a, Kimchi_pasta_snarky_backend.Wrap_impl.Boolean.var) In_circuit.t
        , 'b t )
        Kimchi_pasta_snarky_backend.Wrap_impl.Typ.t
@@ -234,32 +238,34 @@ module Evals : sig
       ; mul_selector : 'f
       ; emul_selector : 'f
       ; endomul_scalar_selector : 'f
-      ; range_check0_selector : ('f, 'bool) Opt.t
-      ; range_check1_selector : ('f, 'bool) Opt.t
-      ; foreign_field_add_selector : ('f, 'bool) Opt.t
-      ; foreign_field_mul_selector : ('f, 'bool) Opt.t
-      ; xor_selector : ('f, 'bool) Opt.t
-      ; rot_selector : ('f, 'bool) Opt.t
-      ; lookup_aggregation : ('f, 'bool) Opt.t
-      ; lookup_table : ('f, 'bool) Opt.t
-      ; lookup_sorted : ('f, 'bool) Opt.t Lookup_sorted_vec.t
-      ; runtime_lookup_table : ('f, 'bool) Opt.t
-      ; runtime_lookup_table_selector : ('f, 'bool) Opt.t
-      ; xor_lookup_selector : ('f, 'bool) Opt.t
-      ; lookup_gate_lookup_selector : ('f, 'bool) Opt.t
-      ; range_check_lookup_selector : ('f, 'bool) Opt.t
-      ; foreign_field_mul_lookup_selector : ('f, 'bool) Opt.t
+      ; range_check0_selector : ('f, 'bool) Kimchi_backend_types.Opt.t
+      ; range_check1_selector : ('f, 'bool) Kimchi_backend_types.Opt.t
+      ; foreign_field_add_selector : ('f, 'bool) Kimchi_backend_types.Opt.t
+      ; foreign_field_mul_selector : ('f, 'bool) Kimchi_backend_types.Opt.t
+      ; xor_selector : ('f, 'bool) Kimchi_backend_types.Opt.t
+      ; rot_selector : ('f, 'bool) Kimchi_backend_types.Opt.t
+      ; lookup_aggregation : ('f, 'bool) Kimchi_backend_types.Opt.t
+      ; lookup_table : ('f, 'bool) Kimchi_backend_types.Opt.t
+      ; lookup_sorted :
+          ('f, 'bool) Kimchi_backend_types.Opt.t Lookup_sorted_vec.t
+      ; runtime_lookup_table : ('f, 'bool) Kimchi_backend_types.Opt.t
+      ; runtime_lookup_table_selector : ('f, 'bool) Kimchi_backend_types.Opt.t
+      ; xor_lookup_selector : ('f, 'bool) Kimchi_backend_types.Opt.t
+      ; lookup_gate_lookup_selector : ('f, 'bool) Kimchi_backend_types.Opt.t
+      ; range_check_lookup_selector : ('f, 'bool) Kimchi_backend_types.Opt.t
+      ; foreign_field_mul_lookup_selector :
+          ('f, 'bool) Kimchi_backend_types.Opt.t
       }
     [@@deriving fields]
 
     (** {4 Converters} *)
 
     val to_absorption_sequence :
-      ('a, 'b) t -> ('a, 'b) Opt.Early_stop_sequence.t
+      ('a, 'b) t -> ('a, 'b) Kimchi_backend_types.Opt.Early_stop_sequence.t
 
     val map : ('f, 'bool) t -> f:('f -> 'g) -> ('g, 'bool) t
 
-    val to_list : ('a, 'b) t -> ('a, 'b) Opt.t list
+    val to_list : ('a, 'b) t -> ('a, 'b) Kimchi_backend_types.Opt.t list
 
     (** {4 Generic helpers} *)
 
@@ -379,7 +385,9 @@ module Proof : sig
         ; openings : ('g, 'fq, 'fqv) Openings.t
         }
 
-      include Sigs.Full.S3 with type ('a, 'b, 'c) t := ('a, 'b, 'c) t
+      include
+        Kimchi_backend_types.Sigs.Full.S3
+          with type ('a, 'b, 'c) t := ('a, 'b, 'c) t
     end
 
     module Latest = V2
@@ -419,7 +427,8 @@ module All_evals : sig
         ; ft_eval1 : 'f
         }
 
-      include Sigs.Full.S2 with type ('a, 'b) t := ('a, 'b) t
+      include
+        Kimchi_backend_types.Sigs.Full.S2 with type ('a, 'b) t := ('a, 'b) t
     end
 
     module Latest = V1
@@ -447,7 +456,7 @@ module All_evals : sig
 
   val typ :
        num_chunks:int
-    -> Opt.Flag.t Features.Full.t
+    -> Kimchi_backend_types.Opt.Flag.t Features.Full.t
     -> ( ( Kimchi_pasta_snarky_backend.Step_impl.Field.t
          , Kimchi_pasta_snarky_backend.Step_impl.Field.t array
          , Kimchi_pasta_snarky_backend.Step_impl.Boolean.var )
@@ -459,7 +468,7 @@ module All_evals : sig
 
   val wrap_typ :
        num_chunks:int
-    -> Opt.Flag.t Features.Full.t
+    -> Kimchi_backend_types.Opt.Flag.t Features.Full.t
     -> ( ( Kimchi_pasta_snarky_backend.Wrap_impl.Field.t
          , Kimchi_pasta_snarky_backend.Wrap_impl.Field.t array
          , Kimchi_pasta_snarky_backend.Wrap_impl.Boolean.var )

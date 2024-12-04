@@ -22,16 +22,16 @@ let wrap_padded_array_typ ~length ~dummy elt =
 
 let hash_fold_array f s x = hash_fold_list f s (Array.to_list x)
 
-module Columns = Nat.N15
-module Columns_vec = Vector.Vector_15
-module Permuts_minus_1 = Nat.N6
-module Permuts_minus_1_vec = Vector.Vector_6
-module Permuts = Nat.N7
-module Permuts_vec = Vector.Vector_7
-module Lookup_sorted_minus_1 = Nat.N4
-module Lookup_sorted_minus_1_vec = Vector.Vector_4
-module Lookup_sorted = Nat.N5
-module Lookup_sorted_vec = Vector.Vector_5
+module Columns = Kimchi_backend_types.Nat.N15
+module Columns_vec = Kimchi_backend_types.Vector.Vector_15
+module Permuts_minus_1 = Kimchi_backend_types.Nat.N6
+module Permuts_minus_1_vec = Kimchi_backend_types.Vector.Vector_6
+module Permuts = Kimchi_backend_types.Nat.N7
+module Permuts_vec = Kimchi_backend_types.Vector.Vector_7
+module Lookup_sorted_minus_1 = Kimchi_backend_types.Nat.N4
+module Lookup_sorted_minus_1_vec = Kimchi_backend_types.Vector.Vector_4
+module Lookup_sorted = Kimchi_backend_types.Nat.N5
+module Lookup_sorted_vec = Kimchi_backend_types.Vector.Vector_5
 
 module Features = struct
   module Full = struct
@@ -156,41 +156,41 @@ module Features = struct
       }
 
     let none =
-      { range_check0 = Opt.Flag.No
-      ; range_check1 = Opt.Flag.No
-      ; foreign_field_add = Opt.Flag.No
-      ; foreign_field_mul = Opt.Flag.No
-      ; xor = Opt.Flag.No
-      ; rot = Opt.Flag.No
-      ; lookup = Opt.Flag.No
-      ; runtime_tables = Opt.Flag.No
-      ; uses_lookups = Opt.Flag.No
-      ; table_width_at_least_1 = Opt.Flag.No
-      ; table_width_at_least_2 = Opt.Flag.No
-      ; table_width_3 = Opt.Flag.No
-      ; lookups_per_row_3 = Opt.Flag.No
-      ; lookups_per_row_4 = Opt.Flag.No
-      ; lookup_pattern_xor = Opt.Flag.No
-      ; lookup_pattern_range_check = Opt.Flag.No
+      { range_check0 = Kimchi_backend_types.Opt.Flag.No
+      ; range_check1 = Kimchi_backend_types.Opt.Flag.No
+      ; foreign_field_add = Kimchi_backend_types.Opt.Flag.No
+      ; foreign_field_mul = Kimchi_backend_types.Opt.Flag.No
+      ; xor = Kimchi_backend_types.Opt.Flag.No
+      ; rot = Kimchi_backend_types.Opt.Flag.No
+      ; lookup = Kimchi_backend_types.Opt.Flag.No
+      ; runtime_tables = Kimchi_backend_types.Opt.Flag.No
+      ; uses_lookups = Kimchi_backend_types.Opt.Flag.No
+      ; table_width_at_least_1 = Kimchi_backend_types.Opt.Flag.No
+      ; table_width_at_least_2 = Kimchi_backend_types.Opt.Flag.No
+      ; table_width_3 = Kimchi_backend_types.Opt.Flag.No
+      ; lookups_per_row_3 = Kimchi_backend_types.Opt.Flag.No
+      ; lookups_per_row_4 = Kimchi_backend_types.Opt.Flag.No
+      ; lookup_pattern_xor = Kimchi_backend_types.Opt.Flag.No
+      ; lookup_pattern_range_check = Kimchi_backend_types.Opt.Flag.No
       }
 
     let maybe =
-      { range_check0 = Opt.Flag.Maybe
-      ; range_check1 = Opt.Flag.Maybe
-      ; foreign_field_add = Opt.Flag.Maybe
-      ; foreign_field_mul = Opt.Flag.Maybe
-      ; xor = Opt.Flag.Maybe
-      ; rot = Opt.Flag.Maybe
-      ; lookup = Opt.Flag.Maybe
-      ; runtime_tables = Opt.Flag.Maybe
-      ; uses_lookups = Opt.Flag.Maybe
-      ; table_width_at_least_1 = Opt.Flag.Maybe
-      ; table_width_at_least_2 = Opt.Flag.Maybe
-      ; table_width_3 = Opt.Flag.Maybe
-      ; lookups_per_row_3 = Opt.Flag.Maybe
-      ; lookups_per_row_4 = Opt.Flag.Maybe
-      ; lookup_pattern_xor = Opt.Flag.Maybe
-      ; lookup_pattern_range_check = Opt.Flag.Maybe
+      { range_check0 = Kimchi_backend_types.Opt.Flag.Maybe
+      ; range_check1 = Kimchi_backend_types.Opt.Flag.Maybe
+      ; foreign_field_add = Kimchi_backend_types.Opt.Flag.Maybe
+      ; foreign_field_mul = Kimchi_backend_types.Opt.Flag.Maybe
+      ; xor = Kimchi_backend_types.Opt.Flag.Maybe
+      ; rot = Kimchi_backend_types.Opt.Flag.Maybe
+      ; lookup = Kimchi_backend_types.Opt.Flag.Maybe
+      ; runtime_tables = Kimchi_backend_types.Opt.Flag.Maybe
+      ; uses_lookups = Kimchi_backend_types.Opt.Flag.Maybe
+      ; table_width_at_least_1 = Kimchi_backend_types.Opt.Flag.Maybe
+      ; table_width_at_least_2 = Kimchi_backend_types.Opt.Flag.Maybe
+      ; table_width_3 = Kimchi_backend_types.Opt.Flag.Maybe
+      ; lookups_per_row_3 = Kimchi_backend_types.Opt.Flag.Maybe
+      ; lookups_per_row_4 = Kimchi_backend_types.Opt.Flag.Maybe
+      ; lookup_pattern_xor = Kimchi_backend_types.Opt.Flag.Maybe
+      ; lookup_pattern_range_check = Kimchi_backend_types.Opt.Flag.Maybe
       }
 
     let none_bool =
@@ -321,7 +321,7 @@ module Features = struct
     ; runtime_tables
     }
 
-  type options = Opt.Flag.t t
+  type options = Kimchi_backend_types.Opt.Flag.t t
 
   type flags = bool t
 
@@ -334,7 +334,7 @@ module Features = struct
       ; rot
       ; lookup
       ; runtime_tables
-      } : _ Hlist.HlistId.t =
+      } : _ Kimchi_backend_types.Hlist.HlistId.t =
     [ range_check0
     ; range_check1
     ; foreign_field_add
@@ -355,7 +355,7 @@ module Features = struct
        ; lookup
        ; runtime_tables
        ] :
-        _ Hlist.HlistId.t ) =
+        _ Kimchi_backend_types.Hlist.HlistId.t ) =
     { range_check0
     ; range_check1
     ; foreign_field_add
@@ -393,15 +393,15 @@ module Features = struct
       |> transport_var ~there:(fun _ -> ()) ~back:(fun () -> constant bool value)
     in
     let bool_typ_of_flag = function
-      | Opt.Flag.Yes ->
+      | Kimchi_backend_types.Opt.Flag.Yes ->
           constant_typ
             ~there:(function true -> () | false -> assert false)
             true
-      | Opt.Flag.No ->
+      | Kimchi_backend_types.Opt.Flag.No ->
           constant_typ
             ~there:(function false -> () | true -> assert false)
             false
-      | Opt.Flag.Maybe ->
+      | Kimchi_backend_types.Opt.Flag.Maybe ->
           bool
     in
     Impl.Typ.of_hlistable
@@ -418,25 +418,25 @@ module Features = struct
       ~value_of_hlist:of_hlist
 
   let none =
-    { range_check0 = Opt.Flag.No
-    ; range_check1 = Opt.Flag.No
-    ; foreign_field_add = Opt.Flag.No
-    ; foreign_field_mul = Opt.Flag.No
-    ; xor = Opt.Flag.No
-    ; rot = Opt.Flag.No
-    ; lookup = Opt.Flag.No
-    ; runtime_tables = Opt.Flag.No
+    { range_check0 = Kimchi_backend_types.Opt.Flag.No
+    ; range_check1 = Kimchi_backend_types.Opt.Flag.No
+    ; foreign_field_add = Kimchi_backend_types.Opt.Flag.No
+    ; foreign_field_mul = Kimchi_backend_types.Opt.Flag.No
+    ; xor = Kimchi_backend_types.Opt.Flag.No
+    ; rot = Kimchi_backend_types.Opt.Flag.No
+    ; lookup = Kimchi_backend_types.Opt.Flag.No
+    ; runtime_tables = Kimchi_backend_types.Opt.Flag.No
     }
 
   let maybe =
-    { range_check0 = Opt.Flag.Maybe
-    ; range_check1 = Opt.Flag.Maybe
-    ; foreign_field_add = Opt.Flag.Maybe
-    ; foreign_field_mul = Opt.Flag.Maybe
-    ; xor = Opt.Flag.Maybe
-    ; rot = Opt.Flag.Maybe
-    ; lookup = Opt.Flag.Maybe
-    ; runtime_tables = Opt.Flag.Maybe
+    { range_check0 = Kimchi_backend_types.Opt.Flag.Maybe
+    ; range_check1 = Kimchi_backend_types.Opt.Flag.Maybe
+    ; foreign_field_add = Kimchi_backend_types.Opt.Flag.Maybe
+    ; foreign_field_mul = Kimchi_backend_types.Opt.Flag.Maybe
+    ; xor = Kimchi_backend_types.Opt.Flag.Maybe
+    ; rot = Kimchi_backend_types.Opt.Flag.Maybe
+    ; lookup = Kimchi_backend_types.Opt.Flag.Maybe
+    ; runtime_tables = Kimchi_backend_types.Opt.Flag.Maybe
     }
 
   let none_bool =
@@ -561,7 +561,8 @@ module Evals = struct
        ; enable_if rot_selector f.rot
        ; enable_if lookup_aggregation lookups_per_row_2
        ; enable_if lookup_table lookups_per_row_2
-       ; Vector.foldi lookup_sorted ~init:true ~f:(fun i acc x ->
+       ; Kimchi_backend_types.Vector.foldi lookup_sorted ~init:true
+           ~f:(fun i acc x ->
              let flag =
                (* NB: lookups_per_row + 1 in sorted, due to the lookup table. *)
                match i with
@@ -619,9 +620,9 @@ module Evals = struct
       ; emul_selector
       ; endomul_scalar_selector
       ]
-      @ Vector.to_list w
-      @ Vector.to_list coefficients
-      @ Vector.to_list s
+      @ Kimchi_backend_types.Vector.to_list w
+      @ Kimchi_backend_types.Vector.to_list coefficients
+      @ Kimchi_backend_types.Vector.to_list s
     in
     let optional_gates =
       List.filter_map ~f:Fn.id
@@ -646,7 +647,8 @@ module Evals = struct
         ]
     in
     always_present @ optional_gates
-    @ List.filter_map ~f:Fn.id (Vector.to_list lookup_sorted)
+    @ List.filter_map ~f:Fn.id
+        (Kimchi_backend_types.Vector.to_list lookup_sorted)
     @ lookup_final_terms
 
   module In_circuit = struct
@@ -661,21 +663,23 @@ module Evals = struct
       ; mul_selector : 'f
       ; emul_selector : 'f
       ; endomul_scalar_selector : 'f
-      ; range_check0_selector : ('f, 'bool) Opt.t
-      ; range_check1_selector : ('f, 'bool) Opt.t
-      ; foreign_field_add_selector : ('f, 'bool) Opt.t
-      ; foreign_field_mul_selector : ('f, 'bool) Opt.t
-      ; xor_selector : ('f, 'bool) Opt.t
-      ; rot_selector : ('f, 'bool) Opt.t
-      ; lookup_aggregation : ('f, 'bool) Opt.t
-      ; lookup_table : ('f, 'bool) Opt.t
-      ; lookup_sorted : ('f, 'bool) Opt.t Lookup_sorted_vec.t
-      ; runtime_lookup_table : ('f, 'bool) Opt.t
-      ; runtime_lookup_table_selector : ('f, 'bool) Opt.t
-      ; xor_lookup_selector : ('f, 'bool) Opt.t
-      ; lookup_gate_lookup_selector : ('f, 'bool) Opt.t
-      ; range_check_lookup_selector : ('f, 'bool) Opt.t
-      ; foreign_field_mul_lookup_selector : ('f, 'bool) Opt.t
+      ; range_check0_selector : ('f, 'bool) Kimchi_backend_types.Opt.t
+      ; range_check1_selector : ('f, 'bool) Kimchi_backend_types.Opt.t
+      ; foreign_field_add_selector : ('f, 'bool) Kimchi_backend_types.Opt.t
+      ; foreign_field_mul_selector : ('f, 'bool) Kimchi_backend_types.Opt.t
+      ; xor_selector : ('f, 'bool) Kimchi_backend_types.Opt.t
+      ; rot_selector : ('f, 'bool) Kimchi_backend_types.Opt.t
+      ; lookup_aggregation : ('f, 'bool) Kimchi_backend_types.Opt.t
+      ; lookup_table : ('f, 'bool) Kimchi_backend_types.Opt.t
+      ; lookup_sorted :
+          ('f, 'bool) Kimchi_backend_types.Opt.t Lookup_sorted_vec.t
+      ; runtime_lookup_table : ('f, 'bool) Kimchi_backend_types.Opt.t
+      ; runtime_lookup_table_selector : ('f, 'bool) Kimchi_backend_types.Opt.t
+      ; xor_lookup_selector : ('f, 'bool) Kimchi_backend_types.Opt.t
+      ; lookup_gate_lookup_selector : ('f, 'bool) Kimchi_backend_types.Opt.t
+      ; range_check_lookup_selector : ('f, 'bool) Kimchi_backend_types.Opt.t
+      ; foreign_field_mul_lookup_selector :
+          ('f, 'bool) Kimchi_backend_types.Opt.t
       }
     [@@deriving hlist, fields]
 
@@ -707,32 +711,44 @@ module Evals = struct
          ; foreign_field_mul_lookup_selector
          } :
           (a, bool) t ) ~(f : a -> b) : (b, bool) t =
-      { w = Vector.map w ~f
-      ; coefficients = Vector.map coefficients ~f
+      { w = Kimchi_backend_types.Vector.map w ~f
+      ; coefficients = Kimchi_backend_types.Vector.map coefficients ~f
       ; z = f z
-      ; s = Vector.map s ~f
+      ; s = Kimchi_backend_types.Vector.map s ~f
       ; generic_selector = f generic_selector
       ; poseidon_selector = f poseidon_selector
       ; complete_add_selector = f complete_add_selector
       ; mul_selector = f mul_selector
       ; emul_selector = f emul_selector
       ; endomul_scalar_selector = f endomul_scalar_selector
-      ; range_check0_selector = Opt.map ~f range_check0_selector
-      ; range_check1_selector = Opt.map ~f range_check1_selector
-      ; foreign_field_add_selector = Opt.map ~f foreign_field_add_selector
-      ; foreign_field_mul_selector = Opt.map ~f foreign_field_mul_selector
-      ; xor_selector = Opt.map ~f xor_selector
-      ; rot_selector = Opt.map ~f rot_selector
-      ; lookup_aggregation = Opt.map ~f lookup_aggregation
-      ; lookup_table = Opt.map ~f lookup_table
-      ; lookup_sorted = Vector.map ~f:(Opt.map ~f) lookup_sorted
-      ; runtime_lookup_table = Opt.map ~f runtime_lookup_table
-      ; runtime_lookup_table_selector = Opt.map ~f runtime_lookup_table_selector
-      ; xor_lookup_selector = Opt.map ~f xor_lookup_selector
-      ; lookup_gate_lookup_selector = Opt.map ~f lookup_gate_lookup_selector
-      ; range_check_lookup_selector = Opt.map ~f range_check_lookup_selector
+      ; range_check0_selector =
+          Kimchi_backend_types.Opt.map ~f range_check0_selector
+      ; range_check1_selector =
+          Kimchi_backend_types.Opt.map ~f range_check1_selector
+      ; foreign_field_add_selector =
+          Kimchi_backend_types.Opt.map ~f foreign_field_add_selector
+      ; foreign_field_mul_selector =
+          Kimchi_backend_types.Opt.map ~f foreign_field_mul_selector
+      ; xor_selector = Kimchi_backend_types.Opt.map ~f xor_selector
+      ; rot_selector = Kimchi_backend_types.Opt.map ~f rot_selector
+      ; lookup_aggregation = Kimchi_backend_types.Opt.map ~f lookup_aggregation
+      ; lookup_table = Kimchi_backend_types.Opt.map ~f lookup_table
+      ; lookup_sorted =
+          Kimchi_backend_types.Vector.map
+            ~f:(Kimchi_backend_types.Opt.map ~f)
+            lookup_sorted
+      ; runtime_lookup_table =
+          Kimchi_backend_types.Opt.map ~f runtime_lookup_table
+      ; runtime_lookup_table_selector =
+          Kimchi_backend_types.Opt.map ~f runtime_lookup_table_selector
+      ; xor_lookup_selector =
+          Kimchi_backend_types.Opt.map ~f xor_lookup_selector
+      ; lookup_gate_lookup_selector =
+          Kimchi_backend_types.Opt.map ~f lookup_gate_lookup_selector
+      ; range_check_lookup_selector =
+          Kimchi_backend_types.Opt.map ~f range_check_lookup_selector
       ; foreign_field_mul_lookup_selector =
-          Opt.map ~f foreign_field_mul_lookup_selector
+          Kimchi_backend_types.Opt.map ~f foreign_field_mul_lookup_selector
       }
 
     let to_list
@@ -763,7 +779,7 @@ module Evals = struct
         ; foreign_field_mul_lookup_selector
         } =
       let always_present =
-        List.map ~f:Opt.just
+        List.map ~f:Kimchi_backend_types.Opt.just
           ( [ z
             ; generic_selector
             ; poseidon_selector
@@ -772,9 +788,9 @@ module Evals = struct
             ; emul_selector
             ; endomul_scalar_selector
             ]
-          @ Vector.to_list w
-          @ Vector.to_list coefficients
-          @ Vector.to_list s )
+          @ Kimchi_backend_types.Vector.to_list w
+          @ Kimchi_backend_types.Vector.to_list coefficients
+          @ Kimchi_backend_types.Vector.to_list s )
       in
       let optional_gates =
         [ range_check0_selector
@@ -786,7 +802,7 @@ module Evals = struct
         ]
       in
       always_present @ optional_gates
-      @ Vector.to_list lookup_sorted
+      @ Kimchi_backend_types.Vector.to_list lookup_sorted
       @ [ lookup_aggregation
         ; lookup_table
         ; runtime_lookup_table
@@ -823,7 +839,7 @@ module Evals = struct
         ; lookup_gate_lookup_selector
         ; range_check_lookup_selector
         ; foreign_field_mul_lookup_selector
-        } : _ Opt.Early_stop_sequence.t =
+        } : _ Kimchi_backend_types.Opt.Early_stop_sequence.t =
       let always_present =
         [ z
         ; generic_selector
@@ -833,9 +849,9 @@ module Evals = struct
         ; emul_selector
         ; endomul_scalar_selector
         ]
-        @ Vector.to_list w
-        @ Vector.to_list coefficients
-        @ Vector.to_list s
+        @ Kimchi_backend_types.Vector.to_list w
+        @ Kimchi_backend_types.Vector.to_list coefficients
+        @ Kimchi_backend_types.Vector.to_list s
       in
       let optional_gates =
         [ range_check0_selector
@@ -849,9 +865,9 @@ module Evals = struct
         ]
       in
 
-      List.map ~f:Opt.just always_present
+      List.map ~f:Kimchi_backend_types.Opt.just always_present
       @ optional_gates
-      @ Vector.to_list lookup_sorted
+      @ Kimchi_backend_types.Vector.to_list lookup_sorted
       @ [ runtime_lookup_table
         ; runtime_lookup_table_selector
         ; xor_lookup_selector
@@ -890,11 +906,11 @@ module Evals = struct
         ; foreign_field_mul_lookup_selector
         } =
       let opt_flag = function
-        | Opt.Just _ ->
+        | Kimchi_backend_types.Opt.Just _ ->
             true_
-        | Opt.Maybe (b, _) ->
+        | Kimchi_backend_types.Opt.Maybe (b, _) ->
             b
-        | Opt.Nothing ->
+        | Kimchi_backend_types.Opt.Nothing ->
             false_
       in
       let enable_if x flag = assert_equal (opt_flag x) flag in
@@ -912,7 +928,7 @@ module Evals = struct
       enable_if rot_selector f.rot ;
       enable_if lookup_aggregation lookups_per_row_2 ;
       enable_if lookup_table lookups_per_row_2 ;
-      Vector.iteri lookup_sorted ~f:(fun i x ->
+      Kimchi_backend_types.Vector.iteri lookup_sorted ~f:(fun i x ->
           let flag =
             (* NB: lookups_per_row + 1 in sorted, due to the lookup table. *)
             match i with
@@ -972,23 +988,33 @@ module Evals = struct
     ; mul_selector
     ; emul_selector
     ; endomul_scalar_selector
-    ; range_check0_selector = Opt.of_option range_check0_selector
-    ; range_check1_selector = Opt.of_option range_check1_selector
-    ; foreign_field_add_selector = Opt.of_option foreign_field_add_selector
-    ; foreign_field_mul_selector = Opt.of_option foreign_field_mul_selector
-    ; xor_selector = Opt.of_option xor_selector
-    ; rot_selector = Opt.of_option rot_selector
-    ; lookup_aggregation = Opt.of_option lookup_aggregation
-    ; lookup_table = Opt.of_option lookup_table
-    ; lookup_sorted = Vector.map ~f:Opt.of_option lookup_sorted
-    ; runtime_lookup_table = Opt.of_option runtime_lookup_table
+    ; range_check0_selector =
+        Kimchi_backend_types.Opt.of_option range_check0_selector
+    ; range_check1_selector =
+        Kimchi_backend_types.Opt.of_option range_check1_selector
+    ; foreign_field_add_selector =
+        Kimchi_backend_types.Opt.of_option foreign_field_add_selector
+    ; foreign_field_mul_selector =
+        Kimchi_backend_types.Opt.of_option foreign_field_mul_selector
+    ; xor_selector = Kimchi_backend_types.Opt.of_option xor_selector
+    ; rot_selector = Kimchi_backend_types.Opt.of_option rot_selector
+    ; lookup_aggregation = Kimchi_backend_types.Opt.of_option lookup_aggregation
+    ; lookup_table = Kimchi_backend_types.Opt.of_option lookup_table
+    ; lookup_sorted =
+        Kimchi_backend_types.Vector.map ~f:Kimchi_backend_types.Opt.of_option
+          lookup_sorted
+    ; runtime_lookup_table =
+        Kimchi_backend_types.Opt.of_option runtime_lookup_table
     ; runtime_lookup_table_selector =
-        Opt.of_option runtime_lookup_table_selector
-    ; xor_lookup_selector = Opt.of_option xor_lookup_selector
-    ; lookup_gate_lookup_selector = Opt.of_option lookup_gate_lookup_selector
-    ; range_check_lookup_selector = Opt.of_option range_check_lookup_selector
+        Kimchi_backend_types.Opt.of_option runtime_lookup_table_selector
+    ; xor_lookup_selector =
+        Kimchi_backend_types.Opt.of_option xor_lookup_selector
+    ; lookup_gate_lookup_selector =
+        Kimchi_backend_types.Opt.of_option lookup_gate_lookup_selector
+    ; range_check_lookup_selector =
+        Kimchi_backend_types.Opt.of_option range_check_lookup_selector
     ; foreign_field_mul_lookup_selector =
-        Opt.of_option foreign_field_mul_lookup_selector
+        Kimchi_backend_types.Opt.of_option foreign_field_mul_lookup_selector
     }
 
   let map (type a b)
@@ -1019,10 +1045,10 @@ module Evals = struct
        ; foreign_field_mul_lookup_selector
        } :
         a t ) ~(f : a -> b) : b t =
-    { w = Vector.map w ~f
-    ; coefficients = Vector.map coefficients ~f
+    { w = Kimchi_backend_types.Vector.map w ~f
+    ; coefficients = Kimchi_backend_types.Vector.map coefficients ~f
     ; z = f z
-    ; s = Vector.map s ~f
+    ; s = Kimchi_backend_types.Vector.map s ~f
     ; generic_selector = f generic_selector
     ; poseidon_selector = f poseidon_selector
     ; complete_add_selector = f complete_add_selector
@@ -1037,7 +1063,8 @@ module Evals = struct
     ; rot_selector = Option.map ~f rot_selector
     ; lookup_aggregation = Option.map ~f lookup_aggregation
     ; lookup_table = Option.map ~f lookup_table
-    ; lookup_sorted = Vector.map ~f:(Option.map ~f) lookup_sorted
+    ; lookup_sorted =
+        Kimchi_backend_types.Vector.map ~f:(Option.map ~f) lookup_sorted
     ; runtime_lookup_table = Option.map ~f runtime_lookup_table
     ; runtime_lookup_table_selector =
         Option.map ~f runtime_lookup_table_selector
@@ -1049,10 +1076,11 @@ module Evals = struct
     }
 
   let map2 (type a b c) (t1 : a t) (t2 : b t) ~(f : a -> b -> c) : c t =
-    { w = Vector.map2 t1.w t2.w ~f
-    ; coefficients = Vector.map2 t1.coefficients t2.coefficients ~f
+    { w = Kimchi_backend_types.Vector.map2 t1.w t2.w ~f
+    ; coefficients =
+        Kimchi_backend_types.Vector.map2 t1.coefficients t2.coefficients ~f
     ; z = f t1.z t2.z
-    ; s = Vector.map2 t1.s t2.s ~f
+    ; s = Kimchi_backend_types.Vector.map2 t1.s t2.s ~f
     ; generic_selector = f t1.generic_selector t2.generic_selector
     ; poseidon_selector = f t1.poseidon_selector t2.poseidon_selector
     ; complete_add_selector =
@@ -1077,7 +1105,8 @@ module Evals = struct
         Option.map2 ~f t1.lookup_aggregation t2.lookup_aggregation
     ; lookup_table = Option.map2 ~f t1.lookup_table t2.lookup_table
     ; lookup_sorted =
-        Vector.map2 ~f:(Option.map2 ~f) t1.lookup_sorted t2.lookup_sorted
+        Kimchi_backend_types.Vector.map2 ~f:(Option.map2 ~f) t1.lookup_sorted
+          t2.lookup_sorted
     ; runtime_lookup_table =
         Option.map2 ~f t1.runtime_lookup_table t2.runtime_lookup_table
     ; runtime_lookup_table_selector =
@@ -1157,9 +1186,9 @@ module Evals = struct
       ; emul_selector
       ; endomul_scalar_selector
       ]
-      @ Vector.to_list w
-      @ Vector.to_list coefficients
-      @ Vector.to_list s
+      @ Kimchi_backend_types.Vector.to_list w
+      @ Kimchi_backend_types.Vector.to_list coefficients
+      @ Kimchi_backend_types.Vector.to_list s
     in
     let optional_gates =
       List.filter_map ~f:Fn.id
@@ -1172,7 +1201,8 @@ module Evals = struct
         ]
     in
     always_present @ optional_gates
-    @ List.filter_map ~f:Fn.id (Vector.to_list lookup_sorted)
+    @ List.filter_map ~f:Fn.id
+        (Kimchi_backend_types.Vector.to_list lookup_sorted)
     @ List.filter_map ~f:Fn.id
         [ lookup_aggregation
         ; lookup_table
@@ -1190,11 +1220,11 @@ module Evals = struct
         _ Features.Full.t ) :
       ((a_var, Step_impl.Boolean.var) In_circuit.t, a t) Step_impl.Typ.t =
     let open Step_impl in
-    let opt flag = Opt.typ flag e ~dummy in
+    let opt flag = Kimchi_backend_types.Opt.typ flag e ~dummy in
     let lookup_sorted =
       let lookups_per_row_3 = opt lookups_per_row_3 in
       let lookups_per_row_4 = opt lookups_per_row_4 in
-      Vector.typ'
+      Kimchi_backend_types.Vector.typ'
         [ lookups_per_row_3
         ; lookups_per_row_3
         ; lookups_per_row_3
@@ -1203,10 +1233,10 @@ module Evals = struct
         ]
     in
     Typ.of_hlistable
-      [ Vector.typ e Columns.n
-      ; Vector.typ e Columns.n
+      [ Kimchi_backend_types.Vector.typ e Columns.n
+      ; Kimchi_backend_types.Vector.typ e Columns.n
       ; e
-      ; Vector.typ e Permuts_minus_1.n
+      ; Kimchi_backend_types.Vector.typ e Permuts_minus_1.n
       ; e
       ; e
       ; e
@@ -1238,11 +1268,11 @@ module Evals = struct
         _ Features.Full.t ) :
       ((a_var, Wrap_impl.Boolean.var) In_circuit.t, a t) Wrap_impl.Typ.t =
     let open Wrap_impl in
-    let opt flag = Opt.wrap_typ flag e ~dummy in
+    let opt flag = Kimchi_backend_types.Opt.wrap_typ flag e ~dummy in
     let lookup_sorted =
       let lookups_per_row_3 = opt lookups_per_row_3 in
       let lookups_per_row_4 = opt lookups_per_row_4 in
-      Vector.wrap_typ'
+      Kimchi_backend_types.Vector.wrap_typ'
         [ lookups_per_row_3
         ; lookups_per_row_3
         ; lookups_per_row_3
@@ -1251,10 +1281,10 @@ module Evals = struct
         ]
     in
     Typ.of_hlistable
-      [ Vector.wrap_typ e Columns.n
-      ; Vector.wrap_typ e Columns.n
+      [ Kimchi_backend_types.Vector.wrap_typ e Columns.n
+      ; Kimchi_backend_types.Vector.wrap_typ e Columns.n
       ; e
-      ; Vector.wrap_typ e Permuts_minus_1.n
+      ; Kimchi_backend_types.Vector.wrap_typ e Permuts_minus_1.n
       ; e
       ; e
       ; e
@@ -1470,38 +1500,46 @@ module Poly_comm = struct
 
     let typ (type g g_var) (g : (g_var, g) Step_impl.Typ.t) ~length
         ~dummy_group_element :
-        ((Step_impl.Boolean.var * g_var) t, g Or_infinity.t t) Step_impl.Typ.t =
+        ( (Step_impl.Boolean.var * g_var) t
+        , g Kimchi_backend_types.Or_infinity.t t )
+        Step_impl.Typ.t =
       let open Step_impl.Typ in
       let g_inf =
         transport
           (tuple2 Step_impl.Boolean.typ g)
           ~there:(function
-            | Or_infinity.Infinity ->
-                (false, dummy_group_element)
-            | Finite x ->
-                (true, x) )
-          ~back:(fun (b, x) -> if b then Infinity else Finite x)
-      in
-      let arr = padded_array_typ0 ~length ~dummy:Or_infinity.Infinity g_inf in
-      of_hlistable [ arr; g_inf ] ~var_to_hlist:to_hlist ~var_of_hlist:of_hlist
-        ~value_to_hlist:to_hlist ~value_of_hlist:of_hlist
-
-    let wrap_typ (type g g_var) (g : (g_var, g) Wrap_impl.Typ.t) ~length
-        ~dummy_group_element :
-        ((Wrap_impl.Boolean.var * g_var) t, g Or_infinity.t t) Wrap_impl.Typ.t =
-      let open Wrap_impl.Typ in
-      let g_inf =
-        transport
-          (tuple2 Wrap_impl.Boolean.typ g)
-          ~there:(function
-            | Or_infinity.Infinity ->
+            | Kimchi_backend_types.Or_infinity.Infinity ->
                 (false, dummy_group_element)
             | Finite x ->
                 (true, x) )
           ~back:(fun (b, x) -> if b then Infinity else Finite x)
       in
       let arr =
-        wrap_padded_array_typ ~length ~dummy:Or_infinity.Infinity g_inf
+        padded_array_typ0 ~length
+          ~dummy:Kimchi_backend_types.Or_infinity.Infinity g_inf
+      in
+      of_hlistable [ arr; g_inf ] ~var_to_hlist:to_hlist ~var_of_hlist:of_hlist
+        ~value_to_hlist:to_hlist ~value_of_hlist:of_hlist
+
+    let wrap_typ (type g g_var) (g : (g_var, g) Wrap_impl.Typ.t) ~length
+        ~dummy_group_element :
+        ( (Wrap_impl.Boolean.var * g_var) t
+        , g Kimchi_backend_types.Or_infinity.t t )
+        Wrap_impl.Typ.t =
+      let open Wrap_impl.Typ in
+      let g_inf =
+        transport
+          (tuple2 Wrap_impl.Boolean.typ g)
+          ~there:(function
+            | Kimchi_backend_types.Or_infinity.Infinity ->
+                (false, dummy_group_element)
+            | Finite x ->
+                (true, x) )
+          ~back:(fun (b, x) -> if b then Infinity else Finite x)
+      in
+      let arr =
+        wrap_padded_array_typ ~length
+          ~dummy:Kimchi_backend_types.Or_infinity.Infinity g_inf
       in
       of_hlistable [ arr; g_inf ] ~var_to_hlist:to_hlist ~var_of_hlist:of_hlist
         ~value_to_hlist:to_hlist ~value_of_hlist:of_hlist
@@ -1553,49 +1591,52 @@ module Messages = struct
     module In_circuit = struct
       type ('g, 'bool) t =
         { sorted : 'g Lookup_sorted_minus_1_vec.t
-        ; sorted_5th_column : ('g, 'bool) Opt.t
+        ; sorted_5th_column : ('g, 'bool) Kimchi_backend_types.Opt.t
         ; aggreg : 'g
-        ; runtime : ('g, 'bool) Opt.t
+        ; runtime : ('g, 'bool) Kimchi_backend_types.Opt.t
         }
       [@@deriving hlist]
     end
 
     let dummy z =
       { aggreg = z
-      ; sorted = Vector.init Lookup_sorted_minus_1.n ~f:(fun _ -> z)
+      ; sorted =
+          Kimchi_backend_types.Vector.init Lookup_sorted_minus_1.n ~f:(fun _ ->
+              z )
       ; sorted_5th_column = None
       ; runtime = None
       }
 
     let typ e ~lookups_per_row_4 ~runtime_tables ~dummy =
       Step_impl.Typ.of_hlistable
-        [ Vector.typ e Lookup_sorted_minus_1.n
-        ; Opt.typ lookups_per_row_4 e ~dummy
+        [ Kimchi_backend_types.Vector.typ e Lookup_sorted_minus_1.n
+        ; Kimchi_backend_types.Opt.typ lookups_per_row_4 e ~dummy
         ; e
-        ; Opt.typ runtime_tables e ~dummy
+        ; Kimchi_backend_types.Opt.typ runtime_tables e ~dummy
         ]
         ~value_to_hlist:to_hlist ~value_of_hlist:of_hlist
         ~var_to_hlist:In_circuit.to_hlist ~var_of_hlist:In_circuit.of_hlist
 
-    let opt_typ ~(uses_lookup : Opt.Flag.t) ~(lookups_per_row_4 : Opt.Flag.t)
-        ~(runtime_tables : Opt.Flag.t) ~dummy:z elt =
-      Opt.typ uses_lookup ~dummy:(dummy z)
+    let opt_typ ~(uses_lookup : Kimchi_backend_types.Opt.Flag.t)
+        ~(lookups_per_row_4 : Kimchi_backend_types.Opt.Flag.t)
+        ~(runtime_tables : Kimchi_backend_types.Opt.Flag.t) ~dummy:z elt =
+      Kimchi_backend_types.Opt.typ uses_lookup ~dummy:(dummy z)
         (typ ~lookups_per_row_4 ~runtime_tables ~dummy:z elt)
 
     let wrap_typ e ~lookups_per_row_4 ~runtime_tables ~dummy =
       Wrap_impl.Typ.of_hlistable
-        [ Vector.wrap_typ e Lookup_sorted_minus_1.n
-        ; Opt.wrap_typ lookups_per_row_4 e ~dummy
+        [ Kimchi_backend_types.Vector.wrap_typ e Lookup_sorted_minus_1.n
+        ; Kimchi_backend_types.Opt.wrap_typ lookups_per_row_4 e ~dummy
         ; e
-        ; Opt.wrap_typ runtime_tables e ~dummy
+        ; Kimchi_backend_types.Opt.wrap_typ runtime_tables e ~dummy
         ]
         ~value_to_hlist:to_hlist ~value_of_hlist:of_hlist
         ~var_to_hlist:In_circuit.to_hlist ~var_of_hlist:In_circuit.of_hlist
 
-    let wrap_opt_typ ~(uses_lookup : Opt.Flag.t)
-        ~(lookups_per_row_4 : Opt.Flag.t) ~(runtime_tables : Opt.Flag.t)
-        ~dummy:z elt =
-      Opt.wrap_typ uses_lookup ~dummy:(dummy z)
+    let wrap_opt_typ ~(uses_lookup : Kimchi_backend_types.Opt.Flag.t)
+        ~(lookups_per_row_4 : Kimchi_backend_types.Opt.Flag.t)
+        ~(runtime_tables : Kimchi_backend_types.Opt.Flag.t) ~dummy:z elt =
+      Kimchi_backend_types.Opt.wrap_typ uses_lookup ~dummy:(dummy z)
         (wrap_typ ~lookups_per_row_4 ~runtime_tables ~dummy:z elt)
   end
 
@@ -1628,23 +1669,28 @@ module Messages = struct
       ; z_comm : 'g Without_degree_bound.t
       ; t_comm : 'g Without_degree_bound.t
       ; lookup :
-          (('g Without_degree_bound.t, 'bool) Lookup.In_circuit.t, 'bool) Opt.t
+          ( ('g Without_degree_bound.t, 'bool) Lookup.In_circuit.t
+          , 'bool )
+          Kimchi_backend_types.Opt.t
       }
     [@@deriving hlist, fields]
   end
 
   let typ (type n) g
       ({ runtime_tables; uses_lookups; lookups_per_row_4; _ } :
-        Opt.Flag.t Features.Full.t ) ~dummy
-      ~(commitment_lengths : (((int, n) Vector.t as 'v), int, int) Poly.t) =
+        Kimchi_backend_types.Opt.Flag.t Features.Full.t ) ~dummy
+      ~(commitment_lengths :
+         (((int, n) Kimchi_backend_types.Vector.t as 'v), int, int) Poly.t ) =
     let module Impl = Step_impl in
     let open Impl.Typ in
     let { Poly.w = w_lens; z; t } = commitment_lengths in
     let array ~length elt = padded_array_typ ~dummy ~length elt in
-    let wo n = array ~length:(Vector.reduce_exn n ~f:Int.max) g in
+    let wo n =
+      array ~length:(Kimchi_backend_types.Vector.reduce_exn n ~f:Int.max) g
+    in
     let _w n =
       With_degree_bound.typ g
-        ~length:(Vector.reduce_exn n ~f:Int.max)
+        ~length:(Kimchi_backend_types.Vector.reduce_exn n ~f:Int.max)
         ~dummy_group_element:dummy
     in
     let lookup =
@@ -1653,22 +1699,29 @@ module Messages = struct
         (wo [ 1 ])
     in
     of_hlistable
-      [ Vector.typ (wo w_lens) Columns.n; wo [ z ]; wo [ t ]; lookup ]
+      [ Kimchi_backend_types.Vector.typ (wo w_lens) Columns.n
+      ; wo [ z ]
+      ; wo [ t ]
+      ; lookup
+      ]
       ~var_to_hlist:In_circuit.to_hlist ~var_of_hlist:In_circuit.of_hlist
       ~value_to_hlist:to_hlist ~value_of_hlist:of_hlist
 
   let wrap_typ (type n) g
       ({ runtime_tables; uses_lookups; lookups_per_row_4; _ } :
-        Opt.Flag.t Features.Full.t ) ~dummy
-      ~(commitment_lengths : (((int, n) Vector.t as 'v), int, int) Poly.t) =
+        Kimchi_backend_types.Opt.Flag.t Features.Full.t ) ~dummy
+      ~(commitment_lengths :
+         (((int, n) Kimchi_backend_types.Vector.t as 'v), int, int) Poly.t ) =
     let module Impl = Wrap_impl in
     let open Impl.Typ in
     let { Poly.w = w_lens; z; t } = commitment_lengths in
     let array ~length elt = wrap_padded_array_typ ~dummy ~length elt in
-    let wo n = array ~length:(Vector.reduce_exn n ~f:Int.max) g in
+    let wo n =
+      array ~length:(Kimchi_backend_types.Vector.reduce_exn n ~f:Int.max) g
+    in
     let _w n =
       With_degree_bound.wrap_typ g
-        ~length:(Vector.reduce_exn n ~f:Int.max)
+        ~length:(Kimchi_backend_types.Vector.reduce_exn n ~f:Int.max)
         ~dummy_group_element:dummy
     in
     let lookup =
@@ -1677,7 +1730,11 @@ module Messages = struct
         (wo [ 1 ])
     in
     of_hlistable
-      [ Vector.wrap_typ (wo w_lens) Columns.n; wo [ z ]; wo [ t ]; lookup ]
+      [ Kimchi_backend_types.Vector.wrap_typ (wo w_lens) Columns.n
+      ; wo [ z ]
+      ; wo [ t ]
+      ; lookup
+      ]
       ~var_to_hlist:In_circuit.to_hlist ~var_of_hlist:In_circuit.of_hlist
       ~value_to_hlist:to_hlist ~value_of_hlist:of_hlist
 end

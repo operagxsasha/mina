@@ -99,7 +99,7 @@ let generateStep =
                       ++  " --deb-build-flags ${BuildFlags.lowerName
                                                   spec.build_flags}"
 
-                else  ""
+                else  " echo skipping "
 
           let commands =
                 merge

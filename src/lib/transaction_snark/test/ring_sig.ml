@@ -11,7 +11,6 @@ module Zkapp_command_segment = Transaction_snark.Zkapp_command_segment
 module Statement = Transaction_snark.Statement
 open Snark_params.Tick
 open Snark_params.Tick.Let_syntax
-module PicklesProof = Pickles.Proof.Make (Nat.N0) (Nat.N0)
 
 (* check a signature on msg against a public key *)
 let check_sig pk msg sigma : Boolean.var Checked.t =
@@ -118,22 +117,13 @@ let%test_unit "ring-signature zkapp tx with 3 zkapp_command" =
     (ring_member_sks, sign_index, test_spec)
   in
   (* set to true to print vk, zkapp_command *)
-  let debug_mode : bool = true in
+  let debug_mode : bool = false in
   Quickcheck.test ~trials:1 gen
     ~f:(fun (ring_member_sks, sign_index, { init_ledger; specs }) ->
       let ring_member_pks =
         List.map ring_member_sks ~f:Inner_curve.(scale one)
       in
-      let () =
-        ring_member_pks
-        |> List.map ~f:(fun x ->
-               Inner_curve.sexp_of_t x |> Sexp.to_string
-               |> printf "signature:\n%s\n\n" )
-        |> const ()
-      in
       Ledger.with_ledger ~depth:ledger_depth ~f:(fun ledger ->
-          Ledger.sexp_of_t ledger |> Sexp.to_string
-          |> printf "ledger_imediate:\n%s\n\n" ;
           Init_ledger.init (module Ledger.Ledger_inner) init_ledger ledger ;
           let spec = List.hd_exn specs in
           let tag, _, (module P), Pickles.Provers.[ ringsig_prover ] =
@@ -148,11 +138,9 @@ let%test_unit "ring-signature zkapp tx with 3 zkapp_command" =
               ~choices:(fun ~self:_ -> [ ring_sig_rule ring_member_pks ])
           in
           let vk = Pickles.Side_loaded.Verification_key.of_compiled tag in
-          let vk_1 = Async.Thread_safe.block_on_async_exn (fun () -> vk) in
+          let vk = Async.Thread_safe.block_on_async_exn (fun () -> vk) in
           ( if debug_mode then
-            Binable.to_string
-              (module Side_loaded_verification_key.Stable.V2)
-              vk_1
+            Binable.to_string (module Side_loaded_verification_key.Stable.V2) vk
             |> Base64.encode_exn ~alphabet:Base64.uri_safe_alphabet
             |> printf "vk:\n%s\n\n" )
           |> fun () ->
@@ -165,7 +153,7 @@ let%test_unit "ring-signature zkapp tx with 3 zkapp_command" =
             spec
           in
           let fee = Amount.of_string "1000000" in
-          let vk = With_hash.of_data ~hash_data:Zkapp_account.digest_vk vk_1 in
+          let vk = With_hash.of_data ~hash_data:Zkapp_account.digest_vk vk in
           let total = Option.value_exn (Amount.add fee amount) in
           (let _is_new, _loc =
              let pk = Public_key.compress sender.public_key in
@@ -286,21 +274,11 @@ let%test_unit "ring-signature zkapp tx with 3 zkapp_command" =
             | _ ->
                 respond Unhandled
           in
-          let (), (), (pi_1 : _ Pickles.Proof.t) =
+          let (), (), (pi : _ Pickles.Proof.t) =
             (fun () -> ringsig_prover ~handler tx_statement)
             |> Async.Thread_safe.block_on_async_exn
           in
-          let (), (), (pi_2 : _ Pickles.Proof.t) =
-            (fun () -> ringsig_prover ~handler tx_statement)
-            |> Async.Thread_safe.block_on_async_exn
-          in
-          let () =
-            assert (
-              Yojson.Safe.equal
-                (PicklesProof.to_yojson pi_1)
-                (PicklesProof.to_yojson pi_2) )
-          in
-          let pi = Pickles.Side_loaded.Proof.of_proof pi_1 in
+          let pi = Pickles.Side_loaded.Proof.of_proof pi in
           let fee_payer =
             let txn_comm =
               Zkapp_command.Transaction_commitment.create_complete transaction
@@ -337,98 +315,10 @@ let%test_unit "ring-signature zkapp tx with 3 zkapp_command" =
               }
           in
           ( if debug_mode then
-            Account.Key.to_yojson sender_pk
-            |> Yojson.Safe.pretty_to_string
-            |> printf "sender_pk:\n%s\n\n"
-            |> fun () ->
-            Amount.to_yojson total |> Yojson.Safe.pretty_to_string
-            |> printf "total:\n%s\n\n"
-            |> fun () ->
-            Amount.to_yojson total |> Yojson.Safe.pretty_to_string
-            |> printf "total:\n%s\n\n"
-            |> fun () ->
-            Side_loaded_verification_key.to_yojson vk_1
-            |> Yojson.Safe.pretty_to_string |> printf "vk:\n%s\n\n"
-            |> fun () ->
             (* print fee payer *)
             Account_update.Fee_payer.to_yojson fee_payer
             |> Yojson.Safe.pretty_to_string
             |> printf "fee_payer:\n%s\n\n"
-            |> fun () ->
-            Account_update.Simple.to_yojson sender
-            |> Yojson.Safe.pretty_to_string |> printf "sender:\n%s\n\n"
-            |> fun () ->
-            Genesis_constants.Constraint_constants.to_yojson
-              constraint_constants
-            |> Yojson.Safe.pretty_to_string
-            |> printf "constraint_constants:\n%s\n\n"
-            |> fun () ->
-            Zkapp_command.to_yojson zkapp_command
-            |> Yojson.Safe.pretty_to_string
-            |> printf "zkapp_command:\n%s\n\n"
-            |> fun () ->
-            Zkapp_command.Transaction_commitment.sexp_of_t transaction
-            |> Sexp.to_string |> Base64.encode_exn |> printf "forest:\n%s\n\n"
-            |> fun () ->
-            Account_update.Simple.to_yojson snapp_account_update_data
-            |> Yojson.Safe.pretty_to_string |> printf "snap au:\n%s\n\n"
-            |> fun () ->
-            Account_update.Simple.to_yojson sender_account_update_data
-            |> Yojson.Safe.pretty_to_string
-            |> printf "sender au:\n%s\n\n"
-            |> fun () ->
-            Zkapp_command.Call_forest.With_hashes.to_yojson ps
-            |> Yojson.Safe.pretty_to_string
-            |> printf "call forest:\n%s\n\n"
-            |> fun () ->
-            Zkapp_command.Digest.Forest.to_yojson account_updates_hash
-            |> Yojson.Safe.pretty_to_string
-            |> printf "account_updates_hash:\n%s\n\n"
-            |> fun () ->
-            Zkapp_statement.to_yojson tx_statement
-            |> Yojson.Safe.pretty_to_string
-            |> printf "statement:\n%s\n\n"
-            |> fun () ->
-            Private_key.to_yojson signing_sk
-            |> Yojson.Safe.pretty_to_string
-            |> printf "signing_sk:\n%s\n\n"
-            |> fun () ->
-            Schnorr.Chunked.Signature.sexp_of_t sigma
-            |> Sexp.to_string |> printf "sigma:\n%s\n\n"
-            |> fun () ->
-            PicklesProof.to_yojson pi_1
-            |> Yojson.Safe.pretty_to_string |> printf "pi_1:\n%s\n\n"
-            |> fun () ->
-            Ledger.sexp_of_t ledger
-            |> Sexp.pp_hum (Format.formatter_of_out_channel stdout)
-            |> fun () ->
-            Init_ledger.sexp_of_t init_ledger
-            |> Sexp.to_string
-            |> printf "init_ledger:\n%s\n\n"
-            |> fun () ->
-            Pickles.Side_loaded.Proof.to_yojson pi
-            |> Yojson.Safe.pretty_to_string |> printf "pi:\n%s\n\n"
-            |> fun () ->
-            List.iteri
-              ~f:(fun idx ring_member ->
-                Inner_curve.sexp_of_t ring_member
-                |> Sexp.to_string |> Base64.encode_exn
-                |> printf "ring_member_pk %d:\n %s\n\n" idx )
-              ring_member_pks
-            |> fun () ->
-            List.iteri
-              ~f:(fun idx ring_member ->
-                Private_key.sexp_of_t ring_member
-                |> Sexp.to_string |> Base64.encode_exn
-                |> printf "ring_member_sk %d:\n %s\n\n" idx )
-              ring_member_sks
-            |> fun () ->
-            Zkapp_command.Call_forest.iteri zkapp_command.account_updates
-              ~f:(fun idx (p : Account_update.t) ->
-                Account_update.Permissions_precondition.to_yojson
-                  p.body.preconditions.account.permissions
-                |> Yojson.Safe.pretty_to_string
-                |> printf "new preconditions #%d body:\n%s\n\n" idx )
             |> fun () ->
             (* print other_account_update data *)
             Zkapp_command.Call_forest.iteri zkapp_command.account_updates

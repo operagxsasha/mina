@@ -189,11 +189,6 @@ module Ledger_inner = struct
      shadow create in order to create an attached mask
   *)
   let create ?directory_name ~depth () =
-    ( match directory_name with
-    | Some name ->
-        printf "CREATE WITH DIR: %s\n" name
-    | None ->
-        () ) ;
     of_database (Db.create ?directory_name ~depth ())
 
   let create_ephemeral_with_base ~depth () =

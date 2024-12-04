@@ -48,7 +48,7 @@ DUNE_PROFILE=devnet ./scripts/mina-local-network/mina-local-network.sh -a -r -pu
 # In a seperate terminal run
 watch 'psql archive -t -c  "select MAX(global_slot_since_genesis) from blocks"'
 # This will tell you the current height of the chain
-# You can stop the script when it's at least 10
+# You can stop the script when it's at least 24
 
 # at this point you probably want to run this script to make the blocks canonical
 ./src/test/archive/sample_db/convert_chain_to_canonical.sh postgres://postgres:postgres@localhost:5432/archive

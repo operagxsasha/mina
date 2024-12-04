@@ -13,5 +13,5 @@
    core_kernel
    ;; local libraries
    snarky.backendless
-   pickles_types
+   kimchi_backend_types
 ))

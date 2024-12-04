@@ -17,11 +17,11 @@
    ppxlib
    core_kernel
    ;; local libraries
-   kimchi_backend_types
    mina_wire_types
+   kimchi_backend_common
    snarky.backendless
    random_oracle_input
-   pickles_types
+   kimchi_backend_types
    pickles_base.one_hot_vector
    ppx_version.runtime
 ))

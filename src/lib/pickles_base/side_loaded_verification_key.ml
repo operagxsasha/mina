@@ -130,7 +130,8 @@ module Repr = struct
       type 'g t =
         { max_proofs_verified : Proofs_verified.Stable.V1.t
         ; actual_wrap_domain_size : Proofs_verified.Stable.V1.t
-        ; wrap_index : 'g Kimchi_backend_common.Plonk_verification_key_evals.Stable.V2.t
+        ; wrap_index :
+            'g Kimchi_backend_common.Plonk_verification_key_evals.Stable.V2.t
         }
       [@@deriving sexp, equal, compare, yojson]
     end
@@ -148,7 +149,8 @@ module Poly = struct
             Mina_wire_types.Pickles_base.Side_loaded_verification_key.Poly.V2.t =
         { max_proofs_verified : 'proofs_verified
         ; actual_wrap_domain_size : 'proofs_verified
-        ; wrap_index : 'g Kimchi_backend_common.Plonk_verification_key_evals.Stable.V2.t
+        ; wrap_index :
+            'g Kimchi_backend_common.Plonk_verification_key_evals.Stable.V2.t
         ; wrap_vk : 'vk option
         }
       [@@deriving hash]
@@ -156,7 +158,8 @@ module Poly = struct
   end]
 end
 
-let index_to_field_elements (k : 'a Kimchi_backend_common.Plonk_verification_key_evals.t) ~g =
+let index_to_field_elements
+    (k : 'a Kimchi_backend_common.Plonk_verification_key_evals.t) ~g =
   let Kimchi_backend_common.Plonk_verification_key_evals.
         { sigma_comm
         ; coefficients_comm

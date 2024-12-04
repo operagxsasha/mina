@@ -104,7 +104,8 @@ module Prefix_mask = struct
   let wrap_typ : (_ Checked.t, proofs_verified) Wrap_impl.Typ.t =
     let open Wrap_impl in
     Wrap_impl.Typ.transport
-      (Kimchi_backend_types.Vector.wrap_typ Boolean.typ Kimchi_backend_types.Nat.N2.n)
+      (Kimchi_backend_types.Vector.wrap_typ Boolean.typ
+         Kimchi_backend_types.Nat.N2.n )
       ~there ~back
 end
 
@@ -115,7 +116,8 @@ module One_hot = struct
     let to_input (type f) (t : f t) =
       Random_oracle_input.Chunked.packeds
         (Array.map
-           Kimchi_backend_types.(Vector.to_array (t :> (f boolean, Nat.N3.n) Vector.t))
+           Kimchi_backend_types.(
+             Vector.to_array (t :> (f boolean, Nat.N3.n) Vector.t))
            ~f:(fun b -> ((b :> f Snarky_backendless.Cvar.t), 1)) )
   end
 

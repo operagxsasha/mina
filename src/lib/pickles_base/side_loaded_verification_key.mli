@@ -10,13 +10,15 @@ module Poly : sig
             Mina_wire_types.Pickles_base.Side_loaded_verification_key.Poly.V2.t =
         { max_proofs_verified : 'proofs_verified
         ; actual_wrap_domain_size : 'proofs_verified
-        ; wrap_index : 'g Kimchi_backend_common.Plonk_verification_key_evals.Stable.V2.t
+        ; wrap_index :
+            'g Kimchi_backend_common.Plonk_verification_key_evals.Stable.V2.t
         ; wrap_vk : 'vk option
         }
       [@@deriving hash]
 
       include
-        Kimchi_backend_types.Sigs.Binable.S3 with type ('a, 'b, 'c) t := ('a, 'b, 'c) t
+        Kimchi_backend_types.Sigs.Binable.S3
+          with type ('a, 'b, 'c) t := ('a, 'b, 'c) t
 
       include Kimchi_backend_types.Sigs.VERSIONED
     end
@@ -59,7 +61,8 @@ module Repr : sig
       type 'g t =
         { max_proofs_verified : Proofs_verified.Stable.V1.t
         ; actual_wrap_domain_size : Proofs_verified.Stable.V1.t
-        ; wrap_index : 'g Kimchi_backend_common.Plonk_verification_key_evals.Stable.V2.t
+        ; wrap_index :
+            'g Kimchi_backend_common.Plonk_verification_key_evals.Stable.V2.t
         }
       [@@deriving sexp, equal, compare, yojson]
 
@@ -140,7 +143,8 @@ end
 
 (** [Max_branches] is mostly an alias for {!Kimchi_backend_types.Nat.N8} *)
 module Max_branches : sig
-  type 'a plus_n = 'a Kimchi_backend_types.Nat.N7.plus_n Kimchi_backend_types.Nat.s
+  type 'a plus_n =
+    'a Kimchi_backend_types.Nat.N7.plus_n Kimchi_backend_types.Nat.s
 
   type n = Kimchi_backend_types.Nat.z plus_n
 
@@ -151,7 +155,10 @@ module Max_branches : sig
   val add :
        'm Kimchi_backend_types.Nat.nat
     -> 'm plus_n Kimchi_backend_types.Nat.nat
-       * (Kimchi_backend_types.Nat.z plus_n, 'm, 'm plus_n) Kimchi_backend_types.Nat.Adds.t
+       * ( Kimchi_backend_types.Nat.z plus_n
+         , 'm
+         , 'm plus_n )
+         Kimchi_backend_types.Nat.Adds.t
 
   module Log2 = Kimchi_backend_types.Nat.N3
 end

@@ -1,19 +1,18 @@
 #!/usr/bin/env bash
 
-
-
-
 # go to root of mina repo
 cd $(dirname -- "${BASH_SOURCE[0]}")/../../../..
 
+# Prepare the database
 sudo -u postgres dropdb archive
 psql -U postgres -c 'CREATE DATABASE archive'
 DUNE_PROFILE=devnet dune build src/app/cli/src/mina.exe src/app/archive/archive.exe src/app/zkapp_test_transaction/zkapp_test_transaction.exe src/app/logproc/logproc.exe
-
 psql -U postgres archive < ./src/app/archive/create_schema.sql
 psql -U postgres -c "ALTER USER postgres WITH PASSWORD 'postgres';"
 
+# start mina-local-network
 DUNE_PROFILE=devnet ./scripts/mina-local-network/mina-local-network.sh -a -r -pu postgres -ppw postgres -zt -vt -lp &
+
 PID=$!
 rec_cleanup(){
   for p in $(pgrep -P $1);
@@ -24,7 +23,7 @@ rec_cleanup(){
 }
 trap "rec_cleanup $PID" EXIT
 
-# Exit once enough blocks have been produced
+# stop mina-local-network once enough blocks have been produced
 while true; do
   sleep 10s
   # psql outputs "    " until there are blocks in the db, the +0 defaults that to 0
@@ -39,12 +38,10 @@ done
 # make the blocks canonical
 ./src/test/archive/sample_db/convert_chain_to_canonical.sh postgres://postgres:postgres@localhost:5432/archive
 
-# regenerate precomputed_blocks.zip and precomputed_blocks.tar.xz
+# regenerate precomputed_blocks.tar.xz
 mkdir precomputed_blocks
 find ~/.mina-network -name 'precomputed_blocks.log' | xargs -I ! ./scripts/mina-local-network/split_precomputed_log.sh ! precomputed_blocks
-rm ./src/test/archive/sample_db/precomputed_blocks.zip
 rm ./src/test/archive/sample_db/precomputed_blocks.tar.xz
-zip -r ./src/test/archive/sample_db/precomputed_blocks.zip precomputed_blocks
 tar cvf ./src/test/archive/sample_db/precomputed_blocks.tar.xz precomputed_blocks
 rm -rf precomputed_blocks
 

@@ -3,10 +3,11 @@
 This folder holds static data which is used when testing replayer component. Name 'component' is used in context of test since it is not na unit tests but also not interfere with other mina components, so it cannot be called integration test. Basically test production version of replayer against manually prepared data and input config file using command:
 
 ```
-psql -c 'CREATE DATABASE archive'
-psql archive < ./src/test/archive/sample_db/archive_db.sql
-dune exec src/app/replayer/replayer.exe -- --archive-uri postgres://postgres:postgres@localhost:5432/archive --input-file src/test/archive/sample_db/replayer_input_file.json --log-level Trace --log-json  | jq
+psql -U postgres -c 'CREATE DATABASE archive'
+psql -U postgres archive < ./src/test/archive/sample_db/archive_db.sql
+dune exec src/app/replayer/replayer.exe -- --archive-uri postgres://postgres:postgres@localhost:5432/archive --input-file src/test/archive/sample_db/replayer_input_file.json --log-level Trace --log-json  | jq  -R -s 'split("\n") | map(fromjson? // .)'
 ```
+The `--log-json  | jq  -R -s 'split("\n") | map(fromjson? // .)'` portion can be ommited but can be usefull as not all of the logged information is displayed normally.
 
 It expects success
 

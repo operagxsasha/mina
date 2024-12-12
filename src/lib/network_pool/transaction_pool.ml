@@ -534,10 +534,8 @@ struct
           (diff_error_of_indexed_pool_error e)
       , indexed_pool_error_metadata e )
 
-    let handle_transition_frontier_diff
-        ( ({ new_commands; removed_commands; reorg_best_tip = _ } :
-            Transition_frontier.best_tip_diff )
-        , best_tip_ledger ) t =
+    let handle_transition_frontier_diff_inner ~new_commands ~removed_commands
+        ~best_tip_ledger t =
       (* This runs whenever the best tip changes. The simple case is when the
          new best tip is an extension of the old one. There, we just remove any
          user commands that were included in it from the transaction pool.
@@ -812,6 +810,13 @@ struct
         Gauge.set Transaction_pool.pool_size
           (Float.of_int (Indexed_pool.size pool))) ;
       t.pool <- pool
+
+    let handle_transition_frontier_diff
+        ( ({ new_commands; removed_commands; reorg_best_tip = _ } :
+            Transition_frontier.best_tip_diff )
+        , best_tip_ledger ) t =
+      handle_transition_frontier_diff_inner ~new_commands ~removed_commands
+        ~best_tip_ledger t
 
     let create ~constraint_constants ~consensus_constants ~time_controller
         ~frontier_broadcast_pipe ~config ~logger ~tf_diff_writer =
@@ -1775,6 +1780,36 @@ let%test_module _ =
 
     let pool_max_size = 25
 
+    let apply_initial_ledger_state t init_ledger_state =
+      let new_ledger =
+        Mina_ledger.Ledger.create_ephemeral
+          ~depth:(Mina_ledger.Ledger.depth !(t.best_tip_ref))
+          ()
+      in
+      Mina_ledger.Ledger.apply_initial_ledger_state new_ledger init_ledger_state ;
+      t.best_tip_ref := new_ledger
+
+    let ledger_snapshot t =
+      Array.map test_keys ~f:(fun kp ->
+          let ledger = Option.value_exn t.txn_pool.best_tip_ledger in
+          let account_id =
+            Account_id.create
+              (Public_key.compress kp.public_key)
+              Token_id.default
+          in
+          let loc =
+            Option.value_exn
+            @@ Mina_ledger.Ledger.Ledger_inner.location_of_account ledger
+                 account_id
+          in
+          let account =
+            Option.value_exn @@ Mina_ledger.Ledger.Ledger_inner.get ledger loc
+          in
+          ( kp
+          , Account.balance account |> Currency.Balance.to_amount
+          , Account.nonce account
+          , Account.timing account ) )
+
     let assert_user_command_sets_equal cs1 cs2 =
       let index cs =
         let decompose c =
@@ -1922,10 +1957,10 @@ let%test_module _ =
           ~genesis_constants ~slot_tx_end
       in
       let pool_, _, _ =
-        Test.create ~config ~logger ~constraint_constants ~consensus_constants
-          ~time_controller ~frontier_broadcast_pipe:frontier_pipe_r
-          ~log_gossip_heard:false ~on_remote_push:(Fn.const Deferred.unit)
-          ~block_window_duration
+        Test.create ~config ~logger:(Logger.create ()) ~constraint_constants
+          ~consensus_constants ~time_controller
+          ~frontier_broadcast_pipe:frontier_pipe_r ~log_gossip_heard:false
+          ~on_remote_push:(Fn.const Deferred.unit) ~block_window_duration
       in
       let txn_pool = Test.resource_pool pool_ in
       let%map () = Async.Scheduler.yield_until_no_jobs_remain () in
@@ -2231,6 +2266,13 @@ let%test_module _ =
           }
       in
       Async.Scheduler.yield_until_no_jobs_remain ()
+
+    let _user_command_to_base64 c = 
+      match User_command.forget_check c with
+      | User_command.Signed_command c -> 
+          Signed_command.to_base64 c
+      | User_command.Zkapp_command p ->
+           Zkapp_command.to_base64 p
 
     let commit_commands test cs =
       let ledger = Option.value_exn test.txn_pool.best_tip_ledger in
@@ -2749,14 +2791,7 @@ let%test_module _ =
         ~f:(fun (init_ledger_state, cmds) ->
           Thread_safe.block_on_async_exn (fun () ->
               let%bind t = setup_test () in
-              let new_ledger =
-                Mina_ledger.Ledger.create_ephemeral
-                  ~depth:(Mina_ledger.Ledger.depth !(t.best_tip_ref))
-                  ()
-              in
-              Mina_ledger.Ledger.apply_initial_ledger_state new_ledger
-                init_ledger_state ;
-              t.best_tip_ref := new_ledger ;
+              apply_initial_ledger_state t init_ledger_state ;
               let%bind () = reorg ~reorg_best_tip:true t [] [] in
               let cmds1, cmds2 = List.split_n cmds pool_max_size in
               let%bind apply_res1 = add_commands t cmds1 in
@@ -3141,6 +3176,374 @@ let%test_module _ =
           let%bind t = setup_test ~slot_tx_end:curr_slot () in
           assert_pool_txs t [] ;
           add_commands t independent_cmds >>| assert_pool_apply [] )
+
+    module Account_spec = struct
+      type t = {
+        key_idx : int
+        ; balance: int
+        ; nonce: int
+      } [@@deriving sexp]
+
+      let rec find_in_test_keys ?(n=0) (x:Keypair.t) =
+        if Keypair.equal test_keys.(n) x then n 
+        else find_in_test_keys x ~n:(n+1)
+
+      let create key_idx balance nonce = 
+        {
+          key_idx
+          ; balance 
+          ; nonce
+        }
+
+      let of_ledger_row ledger_row = 
+        let (kp,balance,nonce,_)  = ledger_row in
+        create 
+           (find_in_test_keys kp) 
+           (Currency.Amount.to_nanomina_int balance)
+           (Unsigned.UInt32.to_int nonce)
+      
+      let apply_payment amount fee t = 
+        create t.key_idx (t.balance - amount - fee) (t.nonce + 1)
+  
+      let apply_zkapp fee t = create t.key_idx (t.balance - fee) (t.nonce + 1)
+
+      let to_key_and_nonce t = 
+        (Public_key.compress test_keys.(t.key_idx).public_key, t.nonce)
+
+    end
+
+    module Command_spec = struct
+
+      type t = 
+        | Payment of { sender : Account_spec.t
+          ; receiver_idx: int
+          ; fee: int
+          ; amount: int
+        } 
+        | Zkapp_blocking_send of { sender : Account_spec.t
+          ; fee: int
+        }
+      [@@deriving sexp]
+
+      let gen_zkapp_blocking_send (spec:Account_spec.t array)
+       = 
+        let open Quickcheck.Generator.Let_syntax in
+        let%bind (random_idx, account_spec) = Array.mapi ~f:(fun i e -> (i,e)) spec |> Quickcheck_lib.of_array in
+        let new_account_spec = Account_spec.apply_zkapp minimum_fee account_spec in 
+        Array.set spec random_idx new_account_spec;
+        return (Zkapp_blocking_send {
+          sender = account_spec
+          ; fee = minimum_fee
+        }) 
+
+      let gen_single_from (spec:Account_spec.t array) (idx,account_spec) = 
+          let open Quickcheck.Generator.Let_syntax in
+            let%bind receiver_idx = test_keys |> Array.mapi ~f:(fun i _-> i) |> Quickcheck_lib.of_array in
+            let%bind amount = Int.gen_incl 5_000_000_000_000 10_000_000_000_000  in
+            let new_account_spec = Account_spec.apply_payment amount minimum_fee account_spec in 
+            Array.set spec idx new_account_spec;
+            return (Payment {
+                sender = account_spec
+              ; fee = minimum_fee
+              ; receiver_idx
+              ; amount
+              })
+       
+      let gen_sequence (spec:Account_spec.t array) ~length = 
+        let open Quickcheck.Generator.Let_syntax in
+        Quickcheck_lib.init_gen_array length ~f:(fun _ ->
+          let%bind (random_idx, account_spec) = Array.mapi ~f:(fun i e -> (i,e)) spec |> Quickcheck_lib.of_array in
+          gen_single_from spec (random_idx,account_spec)
+        )
+      
+      let sender t = match t with
+        | Payment {sender; _} ->  sender
+        | Zkapp_blocking_send {sender; _} -> sender
+
+      let total_cost t = match t with
+        | Payment { amount; fee; _} ->  amount + fee
+        | Zkapp_blocking_send {fee; _} -> fee
+      
+    end
+
+    let gen_branches init_ledger_state ~permission_change ~limited_capacity = 
+      let open Quickcheck.Generator.Let_syntax in
+      let%bind prefix_length = Int.gen_incl 1 3 in
+      let%bind branch_length = Int.gen_incl 1 3 in
+        
+      let spec = Array.map init_ledger_state ~f:Account_spec.of_ledger_row
+      in
+      
+      let%bind prefix_command_spec = 
+        Command_spec.gen_sequence spec ~length:prefix_length in
+      
+      let minor = Array.copy spec in
+      let%bind minor_command_spec = 
+        Command_spec.gen_sequence minor ~length:branch_length in
+      
+      let major = Array.copy spec in
+      let%bind major_command_spec = 
+        Command_spec.gen_sequence major ~length:branch_length in
+      
+      (* limited_capcity edge case gen *)
+
+      (*find account in major and minor brnaches with the same nonces and similar balances (less than 100k mina diff)*)
+      let minor_acc_opt = Array.find_map minor ~f:(fun minor_acc -> 
+          Array.find major ~f:(fun major_acc -> 
+                Int.equal minor_acc.nonce major_acc.nonce &&
+                minor_acc.balance - major_acc.balance < 100_000_000_000
+          ) |> Option.map ~f:(fun major_acc -> (major_acc,minor_acc))
+      ) 
+      in
+      let%bind (major_command_spec, minor_command_spec) = match minor_acc_opt with 
+        | Some (major_acc,minor_acc) when limited_capacity -> 
+          
+          let%bind receiver_idx = test_keys |> Array.filter_mapi ~f:(fun i _-> if Int.equal i major_acc.key_idx then None else Some i) |> Quickcheck_lib.of_array in
+          let big_tx_amount = major_acc.balance / 2 in
+          let small_tx_amount = major_acc.balance / 3 in
+          let big_major_tx = Command_spec.Payment { sender = major_acc
+              ; receiver_idx
+              ; fee = minimum_fee
+              ; amount = big_tx_amount
+              } in
+          let new_account_spec = Account_spec.apply_payment big_tx_amount minimum_fee major_acc in 
+          Array.set major new_account_spec.key_idx new_account_spec;
+              (* 3 smaller command from which last one should be dropped *)
+          let minor_txs = Array.init 3 ~f:(fun _ ->
+              let sender = minor.(minor_acc.key_idx) in
+              let small_minor_tx = Command_spec.Payment { sender
+              ; receiver_idx
+              ; fee = minimum_fee
+              ; amount = small_tx_amount - 1_000_000
+              } in
+              let new_account_spec = Account_spec.apply_payment small_tx_amount minimum_fee sender in 
+              Array.set minor minor_acc.key_idx new_account_spec;
+              small_minor_tx
+            )
+             in
+             Async.printf !"MINOR TXS: %{sexp: Command_spec.t array} \n" minor_txs;
+             return (Array.append major_command_spec [|big_major_tx|],
+              Array.append minor_command_spec minor_txs) 
+          
+        | _ -> return (major_command_spec,minor_command_spec)
+      in
+      (* permission change edger case gen *)
+      let%bind permission_change_cmd = Command_spec.gen_zkapp_blocking_send major in
+      let sender = Command_spec.sender permission_change_cmd in
+      let%bind aux_minor_cmd = Command_spec.gen_single_from minor (sender.key_idx,sender) in
+      let major_command_spec = (  if permission_change then 
+           Array.append major_command_spec [| permission_change_cmd |]
+         else major_command_spec
+      )
+      in
+      let minor_command_spec = (  if permission_change then 
+        Array.append minor_command_spec [| aux_minor_cmd |]
+        else minor_command_spec
+      ) in
+
+      return (prefix_command_spec,major_command_spec,minor_command_spec, minor, major )
+
+    let gen_commands_from_specs (sequence:Command_spec.t array) test : (User_command.Valid.t list) =
+        let best_tip_ledger = Option.value_exn test.txn_pool.best_tip_ledger in 
+        sequence |> Array.map ~f:(fun spec -> 
+          match spec with 
+          | Zkapp_blocking_send { sender; _ }-> 
+            let zkapp = mk_basic_zkapp sender.nonce test_keys.(sender.key_idx) ~permissions:{ 
+              Permissions.user_default with
+              send = Permissions.Auth_required.Impossible
+              ; increment_nonce = Permissions.Auth_required.Impossible
+            } in
+              Or_error.ok_exn
+                (Zkapp_command.Valid.to_valid ~failed:false
+                   ~find_vk:
+                     (Zkapp_command.Verifiable.load_vk_from_ledger
+                        ~get:(Mina_ledger.Ledger.get best_tip_ledger)
+                        ~location_of_account:
+                          (Mina_ledger.Ledger.location_of_account best_tip_ledger) )
+               zkapp) |> User_command.Zkapp_command 
+          | Payment {sender;fee;amount;receiver_idx}->
+            mk_payment ~sender_idx:sender.key_idx ~fee ~nonce:
+            sender.nonce ~receiver_idx
+            ~amount ()
+        ) |> Array.to_list
+
+    let%test_unit "Handle transition frontier diff (permission send tx updated)" =
+      (* 
+        - In *major sequence*, a transaction modifies an account's permissions:
+              1. It removes the permission to maintain the nonce.
+              2. It removes the permission to send transactions.
+        - In *minor sequence*, 
+              There is a regular transaction involving the same account, 
+              but after the permission-modifying transaction in *major sequence*, 
+              the new transaction becomes invalid and must be dropped. *)
+      Quickcheck.test ~trials:1 ~seed:(`Deterministic "")
+        (let open Quickcheck.Generator.Let_syntax in
+        let test = Thread_safe.block_on_async_exn (fun () -> setup_test ()) in
+        let init_ledger_state = ledger_snapshot test in
+        let%bind (prefix,major,minor,minor_account_spec,major_account_spec) = gen_branches init_ledger_state ~permission_change:true ~limited_capacity:true in
+        
+        ledger_snapshot test |> Array.iter ~f:(fun (kp,balance,nonce,_) -> 
+          let rec find_in_test_keys ?(n=0) (x:Keypair.t) =
+            if Keypair.equal test_keys.(n) x then n 
+            else find_in_test_keys x ~n:(n+1)
+          
+          in
+
+          Async.printf "%d " (find_in_test_keys kp);
+          Async.printf "%d " (Currency.Amount.to_mina_int balance);
+          Async.printf "Nonce: %d\n\n" (Unsigned.UInt32.to_int nonce);
+        );
+
+        return (test,init_ledger_state,prefix,major,minor,major_account_spec,minor_account_spec))
+        ~f:(fun (test,_init_ledger_state,prefix_specs,major_specs,minor_specs,major_account_spec,minor_account_spec) ->
+          Thread_safe.block_on_async_exn (fun () ->
+            Async.printf "Prefix\n";
+            Array.iter prefix_specs ~f:(fun cmd ->
+              Async.printf !"%{sexp: Command_spec.t}\n" cmd
+            );
+            Async.printf "Minor\n";
+            Array.iter minor_specs ~f:(fun cmd ->
+              Async.printf !"%{sexp: Command_spec.t}\n" cmd
+            );
+            Async.printf "Major\n";
+            Array.iter major_specs ~f:(fun cmd ->
+              Async.printf !"%{sexp: Command_spec.t}\n" cmd
+            );
+
+            Async.printf "Minor Specs\n";
+            Array.iter minor_account_spec ~f:(fun spec ->
+              Async.printf !"%{sexp: Account_spec.t}\n" spec
+            );
+            Async.printf "Major Specs\n";
+            Array.iter major_account_spec ~f:(fun spec ->
+              Async.printf !"%{sexp: Account_spec.t}\n" spec
+            );
+            
+            let prefix = gen_commands_from_specs (Array.concat [prefix_specs]) test in
+            let minor = gen_commands_from_specs (Array.concat [minor_specs]) test in
+            let major = gen_commands_from_specs (Array.concat [major_specs]) test in
+            
+            let%bind () = advance_chain test (prefix @ major) in
+
+              Test.Resource_pool.handle_transition_frontier_diff_inner
+                ~new_commands:(List.map ~f:mk_with_status (prefix @ major))
+                ~removed_commands:(List.map ~f:mk_with_status (prefix @ minor))
+                ~best_tip_ledger:(Option.value_exn test.txn_pool.best_tip_ledger) test.txn_pool ;
+ 
+              ledger_snapshot test |> Array.iteri ~f:(fun i (kp,balance,nonce,_) -> 
+                let account_state = major_account_spec.(i) in 
+
+                [%test_eq: Keypair.t] test_keys.(account_state.key_idx) kp;
+                [%test_eq: int] account_state.nonce (Unsigned.UInt32.to_int nonce);
+
+                let account_id =
+                  Account_id.create
+                    (Public_key.compress kp.public_key)
+                    Token_id.default
+                in
+                Async.printf !"%{sexp: Account_id.t} " account_id;
+                Async.printf "%d " (Currency.Amount.to_mina_int balance);
+                Async.printf "Nonce: %d\n\n" (Unsigned.UInt32.to_int nonce);
+                Async.printf "Nonce: %d\n\n" (Unsigned.UInt32.to_int nonce);
+              );
+
+              Async.printf "Pool state: \n";
+              let pool_state = Test.Resource_pool.get_all test.txn_pool |> 
+               List.map ~f:(fun tx ->
+                let data = Transaction_hash.User_command_with_valid_signature.data tx in
+                let nonce = data |> User_command.forget_check
+                 |> User_command.applicable_at_nonce |> Unsigned.UInt32.to_int in 
+                 let fee_payer_pk = data |> User_command.forget_check
+                 |> User_command.fee_payer |> Account_id.public_key
+                 in
+                 Async.printf !"%{sexp: Public_key.Compressed.t} : %d\n" fee_payer_pk nonce;
+                 (fee_payer_pk,nonce)
+                ) in 
+
+              let assert_pool_contains pool_state (pk,nonce)= 
+                let actual_opt = List.find pool_state ~f:(fun (fee_payer_pk, actual_nonce ) -> 
+                  Public_key.Compressed.equal pk fee_payer_pk &&
+                  Int.equal actual_nonce nonce
+                ) in
+              match actual_opt with 
+                | Some actual -> [%test_eq: (Public_key.Compressed.t * int)] (pk,nonce) actual;
+                | None -> failwithf !"Expected transaction from %{sexp: Public_key.Compressed.t} with nonce %d not found \n" pk nonce ();
+              
+              in
+
+              let assert_pool_doesn't_contain pool_state (pk,nonce)= 
+                let actual_opt = List.find pool_state ~f:(fun (fee_payer_pk, actual_nonce ) -> 
+                    Public_key.Compressed.equal pk fee_payer_pk &&
+                    Int.equal actual_nonce nonce
+                  ) in
+                  match actual_opt with 
+                  | Some _ -> failwithf !"Unexpected transaction from %{sexp: Public_key.Compressed.t} with nonce %d n found \n" pk nonce ();
+                  | None -> () 
+                
+            in
+            
+            
+            Async.printf "Minor specs: \n";
+            Array.iter minor_specs ~f:(fun (spec:Command_spec.t) ->
+                let sender = Command_spec.sender spec in
+                let (pk, nonce) = Account_spec.to_key_and_nonce sender in
+                Async.printf !"Testing: %{sexp: Public_key.Compressed.t} : %d\n" pk nonce;
+                let find_owned (acc:Account_spec.t) (txs:Command_spec.t array) = 
+                  Array.filter txs ~f:(fun x -> 
+                    let sender = Command_spec.sender x in
+                    Int.equal acc.key_idx sender.key_idx)
+                
+                in  
+                let account_spec = Array.find major_account_spec ~f:(fun spec -> 
+                    sender.key_idx = spec.key_idx
+                  )
+                in
+                match account_spec with
+                  | Some account_spec -> 
+                    if Int.(>) sender.nonce nonce then
+                      (
+                        let sent_blocking_zkapp (specs:Command_spec.t array) pk = 
+                          Array.find specs ~f:(fun s -> 
+                            match s with
+                              | Payment _ -> false
+                              | Zkapp_blocking_send {sender;_} ->  
+                                  let (cur_pk,_) = Account_spec.to_key_and_nonce sender in
+                                  Public_key.Compressed.equal pk cur_pk
+
+                          ) |> Option.is_some
+                        in
+                        if sent_blocking_zkapp major_specs pk then 
+                          (
+                            Async.printf !"major chain contains blocking zkapp sent from %{sexp: Public_key.Compressed.t}. it should be dropped \n" pk ;
+                            assert_pool_doesn't_contain pool_state (pk,nonce);
+                          )
+                        else
+                          (
+                            let total_cost = find_owned sender minor_specs |> Array.map ~f:Command_spec.total_cost |> Array.sum ~f:Fn.id (module Int) in
+                            if (account_spec.balance - total_cost) > 0 then
+                              (Async.printf !"sender nonce is greater than last major nonce %{sexp: Public_key.Compressed.t} -> %d. it should be in pool \n" pk nonce;
+                              assert_pool_contains pool_state (pk,nonce);
+                              )
+                            else
+                              ( Async.printf !"balance is negative %{sexp: Public_key.Compressed.t} -> %d. it should be dropped from pool \n" pk nonce;
+                              assert_pool_doesn't_contain pool_state (pk,nonce);
+                              )
+                          );
+                        
+                      )
+                    else 
+                      Async.printf 
+                      !"sender nonce is smaller than last major nonce %{sexp: Public_key.Compressed.t} -> %d. it should be dropped \n" pk nonce;
+                      assert_pool_doesn't_contain pool_state (pk,nonce);
+                  | None ->
+                      Async.printf 
+                      !"sender didn't send any tx to major branch %{sexp: Public_key.Compressed.t} -> %d. it should be in pool \n" pk nonce;
+                      assert_pool_contains pool_state (pk,nonce);
+                );
+                Deferred.unit
+               );
+              
+               )
 
     let%test_unit "transactions added after slot_tx_end are rejected" =
       Thread_safe.block_on_async_exn (fun () ->

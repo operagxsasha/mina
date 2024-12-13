@@ -42,8 +42,6 @@ in  Pipeline.build
               (S.contains "buildkite/src/Jobs/Test/TestnetIntegrationTest")
           , S.strictlyStart (S.contains "buildkite/src/Command/TestExecutive")
           , S.strictlyStart
-              (S.contains "buildkite/scripts/run-test-executive-cloud")
-          , S.strictlyStart
               (S.contains "buildkite/scripts/run-test-executive-local")
           ]
         , path = "Test"

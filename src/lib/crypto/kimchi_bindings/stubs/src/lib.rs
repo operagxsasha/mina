@@ -71,3 +71,5 @@ pub use {
     poly_commitment::commitment::caml::CamlPolyComm,
     poly_commitment::ipa::caml::CamlOpeningProof,
 };
+
+pub mod o1vm;

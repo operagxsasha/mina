@@ -40,4 +40,5 @@ mina-curves = { path = "../../proof-systems/curves" }
 mina-poseidon = { path = "../../proof-systems/poseidon" }
 o1-utils = { path = "../../proof-systems/utils" }
 poly-commitment = { path = "../../proof-systems/poly-commitment", features = ["ocaml_types"] }
+o1vm = { path = "../../proof-systems/o1vm", features = ["ocaml_types"] }
 

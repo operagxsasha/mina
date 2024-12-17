@@ -36,6 +36,7 @@ ark-serialize = "0.4.2"
 # proof-systems
 groupmap = { path = "../../proof-systems/groupmap" }
 kimchi = { path = "../../proof-systems/kimchi", features = ["ocaml_types"] }
+kimchi-msm = { path = "../../proof-systems/msm" }
 mina-curves = { path = "../../proof-systems/curves" }
 mina-poseidon = { path = "../../proof-systems/poseidon" }
 o1-utils = { path = "../../proof-systems/utils" }

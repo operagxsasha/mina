@@ -1962,6 +1962,7 @@ dependencies = [
  "array-init",
  "groupmap",
  "kimchi",
+ "kimchi-msm",
  "libc",
  "mina-curves",
  "mina-poseidon",

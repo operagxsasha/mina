@@ -16,6 +16,8 @@ let JobSpec = ../../Pipeline/JobSpec.dhall
 
 let DebianChannel = ../../Constants/DebianChannel.dhall
 
+let DebianRepo = ../../Constants/DebianRepo.dhall
+
 let Profiles = ../../Constants/Profiles.dhall
 
 let Artifact = ../../Constants/Artifacts.dhall
@@ -44,9 +46,12 @@ let PromotePackagesSpec =
           , codenames : List DebianVersions.DebVersion
           , from_channel : DebianChannel.Type
           , to_channel : DebianChannel.Type
+          , from_repo : DebianRepo.Type
+          , to_repo : DebianRepo.Type
           , new_tags : List Text
           , remove_profile_from_name : Bool
           , publish : Bool
+          , depends_on : List Command.TaggedKey.Type
           }
       , default =
           { debians = [] : List Package.Type
@@ -59,8 +64,11 @@ let PromotePackagesSpec =
           , codenames = [] : List DebianVersions.DebVersion
           , from_channel = DebianChannel.Type.Unstable
           , to_channel = DebianChannel.Type.Compatible
+          , from_repo = DebianRepo.Type.PackagesO1Test
+          , to_repo = DebianRepo.Type.PackagesO1Test
           , new_tags = [] : List Text
           , remove_profile_from_name = False
+          , depends_on = [] : List Command.TaggedKey.Type
           , publish = False
           }
       }
@@ -88,8 +96,11 @@ let promotePackagesToDebianSpecs
                                 , codename = codename
                                 , from_channel = promote_packages.from_channel
                                 , to_channel = promote_packages.to_channel
+                                , source_repo = promote_packages.from_repo
+                                , target_repo = promote_packages.to_repo
                                 , remove_profile_from_name =
                                     promote_packages.remove_profile_from_name
+                                , deps = promote_packages.depends_on
                                 , step_key =
                                     "promote-debian-${Package.lowerName
                                                         debian}-${DebianVersions.lowerName
@@ -133,6 +144,7 @@ let promotePackagesToDockerSpecs
                                 , publish = promote_artifacts.publish
                                 , remove_profile_from_name =
                                     promote_artifacts.remove_profile_from_name
+                                , deps = promote_artifacts.depends_on
                                 , step_key =
                                     "add-tag-to-${Artifact.lowerName
                                                     docker}-${DebianVersions.lowerName

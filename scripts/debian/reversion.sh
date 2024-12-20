@@ -52,7 +52,7 @@ if [[ -z "$RELEASE" ]]; then NEW_RELEASE=$RELEASE; fi;
 if [[ -z "$VERSION" ]]; then NEW_VERSION=$VERSION; fi;
 if [[ -z "$SUITE" ]]; then NEW_SUITE=$SUITE; fi;
 if [[ -z "$REPO" ]]; then echo "No repository specified"; echo ""; usage "$0" "$1" ; fi
-if [[ -z "$SIGN" ]]; then 
+if [[ ! "$SIGN" ]]; then
   SIGN_ARG=""
 else 
   SIGN_ARG="--sign $SIGN"
@@ -71,4 +71,4 @@ function rebuild_deb() {
 }
 
 rebuild_deb
-source scripts/debian/publish.sh --names "${NEW_NAME}_${NEW_VERSION}.deb" --version ${NEW_VERSION} --codename ${CODENAME} --release ${NEW_RELEASE} --bucket ${NEW_REPO}
+source scripts/debian/publish.sh --names "${NEW_NAME}_${NEW_VERSION}.deb" --version ${NEW_VERSION} --codename ${CODENAME} --release ${NEW_RELEASE} --bucket ${NEW_REPO} "$SIGN_ARG"

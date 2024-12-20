@@ -3,8 +3,6 @@
 -- If FROM_VERSION_MANUAL is set the used it.
 -- Otherwise use MINA_DEB_VERSION which is set in export-git-env-vars.sh file
 
-let Prelude = ../../External/Prelude.dhall
-
 let S = ../../Lib/SelectFiles.dhall
 
 let DebianVersions = ../../Constants/DebianVersions.dhall
@@ -30,8 +28,6 @@ let PromotePackages = ../../Command/Promotion/PromotePackages.dhall
 let VerifyPackages = ../../Command/Promotion/VerifyPackages.dhall
 
 let Command = ../../Command/Base.dhall
-
-let List/map = Prelude.List.map
 
 let promotePackages =
           \(codenames : List DebianVersions.DebVersion)
@@ -59,17 +55,7 @@ let promotePackages =
             ]
           , remove_profile_from_name = False
           , publish = False
-          , depends_on =
-              List/map
-                DebianVersions.DebVersion
-                Command.TaggedKey.Type
-                (     \(codename : DebianVersions.DebVersion)
-                  ->  { name = "PublishDebians"
-                      , key =
-                          "publish-${DebianVersions.lowerName codename}-deb-pkg"
-                      }
-                )
-                codenames
+          , depends_on = [] : List Command.TaggedKey.Type
           }
 
 let verifyPackages =

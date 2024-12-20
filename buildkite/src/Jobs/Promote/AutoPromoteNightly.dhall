@@ -13,6 +13,8 @@ let DebianPackage = ../../Constants/DebianPackage.dhall
 
 let DebianChannel = ../../Constants/DebianChannel.dhall
 
+let DebianRepo = ../../Constants/DebianRepo.dhall
+
 let Network = ../../Constants/Network.dhall
 
 let Profiles = ../../Constants/Profiles.dhall
@@ -48,6 +50,7 @@ let promotePackages =
           , codenames = codenames
           , from_channel = DebianChannel.Type.Unstable
           , to_channel = target_channel
+          , to_repo = DebianRepo.Type.Nightly
           , new_tags =
             [ "latest-${DebianChannel.lowerName target_channel}-nightly"
             , "${DebianChannel.lowerName

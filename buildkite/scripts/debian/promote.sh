@@ -48,7 +48,6 @@ if [[ -z "$FROM_COMPONENT" ]]; then usage "Source component is not set!"; fi;
 if [[ -z "$TO_COMPONENT" ]]; then usage "Target component is not set!"; fi;
 if [[ -z "$REPO" ]]; then usage "Repository is not set!"; fi;
 if [[ -z "$NEW_REPO" ]]; then NEW_REPO=$REPO; fi;
-if [[ -z "$REPO_KEY" ]]; then usage "Target repository key is not set!"; fi;
 
 # check for AWS Creds
 if [ -z "$AWS_ACCESS_KEY_ID" ]; then

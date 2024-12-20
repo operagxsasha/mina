@@ -52,10 +52,10 @@ if [[ -z "$RELEASE" ]]; then NEW_RELEASE=$RELEASE; fi;
 if [[ -z "$VERSION" ]]; then NEW_VERSION=$VERSION; fi;
 if [[ -z "$SUITE" ]]; then NEW_SUITE=$SUITE; fi;
 if [[ -z "$REPO" ]]; then echo "No repository specified"; echo ""; usage "$0" "$1" ; fi
-if [[ ! "$SIGN" ]]; then
-  SIGN_ARG=""
-else 
+if [[ -v SIGN ]]; then
   SIGN_ARG="--sign $SIGN"
+else 
+  SIGN_ARG=""
 fi
 
 function rebuild_deb() {
